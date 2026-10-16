@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Sparkles, CheckCircle2, AlertTriangle, Link2, Terminal, HelpCircle, Copy, Check } from 'lucide-react';
 
 export default function N8nModal({ isOpen, onClose, webhookUrl, onSaveWebhook, isN8nActive, onToggleMode }) {
@@ -6,6 +6,12 @@ export default function N8nModal({ isOpen, onClose, webhookUrl, onSaveWebhook, i
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [copiedPayload, setCopiedPayload] = useState(false);
+
+  useEffect(() => {
+    if (webhookUrl) {
+      setInputUrl(webhookUrl);
+    }
+  }, [webhookUrl, isOpen]);
 
   if (!isOpen) return null;
 

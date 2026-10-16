@@ -12,14 +12,16 @@ import OyikChatbot from './components/OyikChatbot';
 import ChatLauncher from './components/ChatLauncher';
 import N8nModal from './components/N8nModal';
 
+const DEFAULT_WEBHOOK_URL = 'https://oyik.cloud/webhook/512863f9-37d0-44dd-969e-8b40dea06796/chat';
+
 export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
   const [isN8nModalOpen, setIsN8nModalOpen] = useState(false);
   
-  // Stored n8n webhook settings
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [isN8nActive, setIsN8nActive] = useState(false);
+  // Stored n8n webhook settings (defaults to live user n8n webhook)
+  const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
+  const [isN8nActive, setIsN8nActive] = useState(true);
 
   useEffect(() => {
     const savedUrl = localStorage.getItem('oyik_n8n_webhook_url');
@@ -27,7 +29,16 @@ export default function App() {
     
     if (savedUrl) {
       setWebhookUrl(savedUrl);
+    } else {
+      setWebhookUrl(DEFAULT_WEBHOOK_URL);
+      localStorage.setItem('oyik_n8n_webhook_url', DEFAULT_WEBHOOK_URL);
+    }
+
+    if (savedActive !== null) {
       setIsN8nActive(savedActive === 'true');
+    } else {
+      setIsN8nActive(true);
+      localStorage.setItem('oyik_n8n_is_active', 'true');
     }
   }, []);
 
