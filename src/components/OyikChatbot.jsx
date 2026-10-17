@@ -11,14 +11,15 @@ export default function OyikChatbot({
   initialPrompt, 
   webhookUrl, 
   isN8nActive, 
-  onOpenN8nConfig 
+  onOpenN8nConfig,
+  sessionId,
+  onResetSession
 }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [sessionId, setSessionId] = useState('');
   const [bookingState, setBookingState] = useState({
     step: 'idle', // 'idle' | 'doctor' | 'date' | 'time' | 'details' | 'confirmed'
     doctor: null,
@@ -61,18 +62,6 @@ export default function OyikChatbot({
     }
   };
 
-  // Generate session ID on mount
-  useEffect(() => {
-    const existingSession = localStorage.getItem('oyik_chatbot_session');
-    if (existingSession) {
-      setSessionId(existingSession);
-    } else {
-      const newSession = 'oyik_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
-      localStorage.setItem('oyik_chatbot_session', newSession);
-      setSessionId(newSession);
-    }
-  }, []);
-
   // Initialize welcome messages
   useEffect(() => {
     if (messages.length === 0) {
@@ -94,8 +83,10 @@ export default function OyikChatbot({
   }, []);
 
   // Handle incoming initial prompt if passed from an external button click
+  const lastProcessedPromptRef = useRef(null);
   useEffect(() => {
-    if (initialPrompt && isOpen) {
+    if (initialPrompt && isOpen && lastProcessedPromptRef.current !== initialPrompt) {
+      lastProcessedPromptRef.current = initialPrompt;
       handleUserSend(initialPrompt);
     }
   }, [initialPrompt, isOpen]);
@@ -394,6 +385,9 @@ Instructions:
   };
 
   const handleResetChat = () => {
+    if (typeof onResetSession === 'function') {
+      onResetSession();
+    }
     const welcomeMsg = {
       id: 'welcome_' + Date.now(),
       sender: 'bot',
@@ -418,10 +412,11 @@ Instructions:
     });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className={`chatbot-window-container ${isExpanded ? 'expanded' : ''}`}>
+    <div 
+      className={`chatbot-window-container ${isExpanded ? 'expanded' : ''}`}
+      style={{ display: isOpen ? 'flex' : 'none' }}
+    >
       {/* Chat Window Header */}
       <div className="chat-header">
         <div className="chat-header-info">

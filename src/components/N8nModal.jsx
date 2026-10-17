@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, CheckCircle2, AlertTriangle, Link2, Terminal, HelpCircle, Copy, Check } from 'lucide-react';
 
-export default function N8nModal({ isOpen, onClose, webhookUrl, onSaveWebhook, isN8nActive, onToggleMode }) {
+export default function N8nModal({ isOpen, onClose, webhookUrl, onSaveWebhook, isN8nActive, onToggleMode, sessionId }) {
   const [inputUrl, setInputUrl] = useState(webhookUrl || '');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -37,7 +37,7 @@ export default function N8nModal({ isOpen, onClose, webhookUrl, onSaveWebhook, i
         },
         body: JSON.stringify({
           chatInput: 'Hello Oyik Bot, this is a test ping from Oyik Clinic Frontend',
-          sessionId: 'test_session_' + Date.now(),
+          sessionId: sessionId || 'test_session_' + Date.now(),
           action: 'sendMessage'
         })
       });
@@ -73,7 +73,7 @@ export default function N8nModal({ isOpen, onClose, webhookUrl, onSaveWebhook, i
 
   const samplePayload = `{
   "chatInput": "I want to book an appointment with Dr. Ananya",
-  "sessionId": "oyik_session_1729081234",
+  "sessionId": "${sessionId || 'your-session-uuid'}",
   "action": "sendMessage"
 }`;
 

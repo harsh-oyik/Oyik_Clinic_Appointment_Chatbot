@@ -16,6 +16,15 @@ import N8nModal from './components/N8nModal';
 const DEFAULT_WEBHOOK_URL =
   'https://oyik.cloud/webhook/754890e6-d157-481d-9fa1-32d8563e39e9/chat';
 
+const generateSessionId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) =>
+    (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
+  );
+};
+
 export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
@@ -24,7 +33,19 @@ export default function App() {
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
   const [isN8nActive, setIsN8nActive] = useState(true);
 
+  // In-memory session ID generated fresh on every full page refresh.
+  // Not restored from cookies, localStorage, or sessionStorage.
+  const [sessionId, setSessionId] = useState(() => generateSessionId());
+
   useEffect(() => {
+    // Purge any legacy persisted session ID from storage
+    try {
+      localStorage.removeItem('oyik_chatbot_session');
+      sessionStorage.removeItem('oyik_chatbot_session');
+    } catch (e) {
+      // Ignore storage restrictions
+    }
+
     // Always use the new clinic appointment webhook.
     // Do not allow an old URL saved in localStorage to override it.
     setWebhookUrl(DEFAULT_WEBHOOK_URL);
@@ -34,6 +55,12 @@ export default function App() {
     setIsN8nActive(true);
     localStorage.setItem('oyik_n8n_is_active', 'true');
   }, []);
+
+  const handleResetSession = () => {
+    const newId = generateSessionId();
+    setSessionId(newId);
+    return newId;
+  };
 
   const handleOpenChat = (prompt = '') => {
     setChatInitialPrompt(prompt);
@@ -142,6 +169,8 @@ export default function App() {
         webhookUrl={webhookUrl}
         isN8nActive={isN8nActive}
         onOpenN8nConfig={() => setIsN8nModalOpen(true)}
+        sessionId={sessionId}
+        onResetSession={handleResetSession}
       />
 
       {/* Floating Bottom-Right Launcher */}
@@ -159,6 +188,7 @@ export default function App() {
         onSaveWebhook={handleSaveWebhook}
         isN8nActive={isN8nActive}
         onToggleMode={handleToggleMode}
+        sessionId={sessionId}
       />
     </div>
   );
