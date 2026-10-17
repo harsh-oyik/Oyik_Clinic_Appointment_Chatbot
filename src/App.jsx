@@ -12,7 +12,7 @@ import OyikChatbot from './components/OyikChatbot';
 import ChatLauncher from './components/ChatLauncher';
 import N8nModal from './components/N8nModal';
 
-const DEFAULT_WEBHOOK_URL = 'https://oyik.cloud/webhook/512863f9-37d0-44dd-969e-8b40dea06796/chat';
+const DEFAULT_WEBHOOK_URL = 'https://oyik.cloud/webhook/754890e6-d157-481d-9fa1-32d8563e39e9/chat';
 
 export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -27,7 +27,8 @@ export default function App() {
     const savedUrl = localStorage.getItem('oyik_n8n_webhook_url');
     const savedActive = localStorage.getItem('oyik_n8n_is_active');
     
-    if (savedUrl) {
+    // If user has a custom URL that isn't the previous default, keep it; otherwise use the new DEFAULT_WEBHOOK_URL
+    if (savedUrl && savedUrl !== 'https://oyik.cloud/webhook/512863f9-37d0-44dd-969e-8b40dea06796/chat') {
       setWebhookUrl(savedUrl);
     } else {
       setWebhookUrl(DEFAULT_WEBHOOK_URL);
