@@ -32,6 +32,15 @@
   background: var(--color-success);
   display: inline-block;
   box-shadow: 0 0 8px var(--color-success);
+  flex-shrink: 0;
+}
+
+.strip-text-desktop {
+  display: inline;
+}
+
+.strip-text-mobile {
+  display: none;
 }
 
 .strip-right {
@@ -40,9 +49,9 @@
   gap: 12px;
 }
 
-.strip-n8n-info {
-  color: var(--color-gold-light);
-  font-weight: 500;
+.strip-schedule-info {
+  color: #c7bead;
+  font-weight: 400;
 }
 
 .strip-btn {
@@ -55,6 +64,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .strip-btn:hover {
@@ -180,57 +190,98 @@
   gap: 12px;
 }
 
-.n8n-status-pill {
+.nav-phone-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 14px;
+  gap: 7px;
+  padding: 6px 12px;
   border-radius: var(--radius-full);
-  font-size: 0.8rem;
+  background: var(--color-gold-pale);
+  border: 1px solid rgba(197, 157, 95, 0.3);
+  font-size: 0.82rem;
   font-weight: 600;
-  transition: all var(--transition-normal);
-  border: 1px solid transparent;
+  color: var(--color-primary-dark);
+  transition: all var(--transition-fast);
 }
 
-.n8n-status-pill.active {
-  background: #ecfdf5;
-  color: #065f46;
-  border-color: #a7f3d0;
+.nav-phone-link:hover {
+  background: var(--color-gold);
+  color: #123830;
 }
 
-.n8n-status-pill.demo {
-  background: #fffbeb;
-  color: #92400e;
-  border-color: #fde68a;
+.nav-phone-text {
+  display: inline;
 }
 
-.n8n-status-pill .status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.nav-cta-text-desktop {
+  display: inline;
 }
 
-.n8n-status-pill.active .status-dot {
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
-}
-
-.n8n-status-pill.demo .status-dot {
-  background: #f59e0b;
-}
-
-.n8n-status-pill:hover {
-  transform: translateY(-1px);
-  filter: brightness(0.96);
+.nav-cta-text-mobile {
+  display: none;
 }
 
 .mobile-toggle {
   display: none;
+  background: transparent;
   color: var(--color-primary-dark);
+  padding: 6px;
+  cursor: pointer;
+}
+
+.mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  top: 110px;
+  background: rgba(9, 23, 20, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 98;
 }
 
 .mobile-menu-drawer {
-  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  padding: 24px 20px;
+  box-shadow: 0 16px 36px rgba(18, 56, 48, 0.16);
+  border-bottom: 2px solid var(--color-gold);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 99;
+}
+
+.mobile-menu-drawer a {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(230, 223, 209, 0.45);
+}
+
+.mobile-drawer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.animate-slide-down {
+  animation: slideDownMenu 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideDownMenu {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ==========================================================================
@@ -2222,79 +2273,408 @@
 }
 
 /* ==========================================================================
-   Responsive Breakpoints
+   Comprehensive Responsive Breakpoints
    ========================================================================== */
+
+/* Tablet Landscape & Medium Desktops (<= 1024px) */
 @media (max-width: 1024px) {
   .hero-container {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 48px;
   }
   .hero-visual-wrapper {
-    max-width: 600px;
+    max-width: 620px;
     margin: 0 auto;
+    width: 100%;
   }
   .spotlight-grid {
     grid-template-columns: 1fr;
+    gap: 40px;
   }
   .departments-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
   }
   .doctors-grid {
     grid-template-columns: 1fr 1fr;
+    gap: 24px;
   }
   .steps-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
   }
   .testimonials-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
   }
   .footer-top-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 32px;
+    gap: 36px;
   }
 }
 
+/* Tablet Portrait & Large Phones (<= 768px) */
 @media (max-width: 768px) {
+  /* Navigation */
+  .nav-container {
+    height: 70px;
+  }
   .nav-links {
     display: none;
   }
   .mobile-toggle {
     display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .mobile-menu-drawer {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 20px;
-    background: #ffffff;
-    border-top: 1px solid var(--color-border);
+  .mobile-backdrop {
+    top: 102px;
+  }
+
+  /* Section Spacings */
+  .hero-section {
+    padding: 36px 0 54px 0;
+  }
+  .departments-section,
+  .doctors-section,
+  .how-it-works-section,
+  .testimonials-section {
+    padding: 56px 0;
+  }
+
+  /* Hero */
+  .hero-title {
+    font-size: clamp(2rem, 5.5vw, 2.7rem);
+    margin: 14px 0 16px 0;
+  }
+  .hero-subtitle {
+    font-size: 1rem;
+    line-height: 1.65;
+    margin-bottom: 24px;
+  }
+  .hero-main-img {
+    height: 380px;
+  }
+  .status-floating-card, 
+  .bot-floating-card {
+    position: static;
+    margin-top: 14px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Grid Layouts */
+  .departments-grid {
+    grid-template-columns: 1fr;
   }
   .doctors-grid {
     grid-template-columns: 1fr;
+    max-width: 460px;
+    margin: 0 auto;
   }
-  .hero-stats-grid {
+  .steps-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .testimonials-grid {
     grid-template-columns: 1fr;
   }
   .how-cta-banner {
     flex-direction: column;
     text-align: center;
-    padding: 24px;
+    padding: 28px 22px;
+    gap: 20px;
   }
   .banner-left {
     flex-direction: column;
+    text-align: center;
+    gap: 14px;
   }
   .footer-top-grid {
     grid-template-columns: 1fr;
+    gap: 32px;
   }
-  .chatbot-window-container {
-    right: 12px;
-    left: 12px;
-    bottom: 84px;
-    width: auto;
-    height: 75vh;
+  .footer-bottom {
+    flex-direction: column-reverse;
+    gap: 16px;
+    text-align: center;
   }
-  .status-floating-card, .bot-floating-card {
-    position: static;
-    margin-top: 14px;
+  .footer-bottom-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+  }
+}
+
+/* Mobile Devices (<= 640px) */
+@media (max-width: 640px) {
+  /* Top Utility Strip */
+  .top-utility-strip {
+    font-size: 0.72rem;
+    padding: 5px 0;
+  }
+  .strip-text-desktop {
+    display: none;
+  }
+  .strip-text-mobile {
+    display: inline;
+  }
+  .strip-schedule-info {
+    display: none;
+  }
+  .strip-btn {
+    padding: 2px 8px;
+    font-size: 0.7rem;
+  }
+
+  /* Navbar */
+  .nav-phone-text {
+    display: none;
+  }
+  .nav-phone-link {
+    padding: 6px 9px;
+  }
+  .mobile-backdrop {
+    top: 96px;
+  }
+
+  /* Hero */
+  .hero-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .stat-card {
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 1.35rem;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+  }
+  .hero-main-img {
+    height: 310px;
+    border-radius: 20px;
+  }
+  .hero-image-frame {
+    border-radius: 20px;
+  }
+
+  /* Spotlight Box */
+  .interactive-box {
+    padding: 20px 16px;
+  }
+
+  /* Full Screen Mobile Chat Experience */
+  .chatbot-window-container,
+  .chatbot-window-container.expanded {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 10000;
+  }
+
+  .chat-header {
+    padding: 12px 14px;
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  .chat-header-actions .header-icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .chat-messages-body {
+    padding: 14px 12px;
+    flex: 1;
+  }
+
+  .chat-bubble {
+    max-width: 88%;
+    font-size: 0.88rem;
+    padding: 10px 14px;
+  }
+
+  .chat-input-area {
+    padding: 10px 12px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  .chat-text-input {
+    font-size: 16px !important; /* Prevents auto-zoom in iOS Safari */
+    padding: 10px 14px;
+  }
+
+  .form-inner-group input {
+    font-size: 16px !important; /* Prevents auto-zoom in iOS Safari */
+  }
+
+  .ticket-actions {
+    grid-template-columns: 1fr;
+  }
+
+  /* Chat Launcher Button */
+  .chat-launcher-root {
+    bottom: 18px;
+    right: 18px;
+  }
+
+  .chat-launcher-btn {
+    width: 58px;
+    height: 58px;
+  }
+
+  .launcher-tooltip {
+    bottom: 74px;
+    right: 0;
+    width: min(290px, calc(100vw - 36px));
+    padding: 14px;
+  }
+}
+
+/* Compact Mobile Devices (<= 480px) */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 14px;
+  }
+
+  /* Navbar Brand & Actions */
+  .nav-brand {
+    gap: 10px;
+  }
+  .brand-emblem {
+    width: 38px;
+    height: 38px;
+    padding: 3px;
+  }
+  .brand-title {
+    font-size: 0.95rem;
+  }
+  .brand-subtitle {
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+  }
+  .nav-cta-text-desktop {
+    display: none;
+  }
+  .nav-cta-text-mobile {
+    display: inline;
+  }
+  .nav-cta {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  /* Hero Section */
+  .badge-heritage {
+    font-size: 0.74rem;
+    padding: 5px 11px;
+  }
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+  .hero-cta-group .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .btn-hero {
+    padding: 13px 20px;
+    font-size: 0.95rem;
+  }
+  .hero-highlights {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .hero-main-img {
+    height: 250px;
+  }
+
+  /* Departments & Doctor Cards */
+  .dept-card {
+    padding: 22px 16px;
+  }
+  .dept-treatments ul {
+    grid-template-columns: 1fr;
+  }
+  .dept-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .dept-book-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .doc-image-wrapper {
+    height: 240px;
+  }
+  .doc-content {
+    padding: 20px 16px;
+  }
+  .doc-book-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Spotlight */
+  .interactive-box {
+    padding: 16px 12px;
+  }
+  .prompt-chip {
+    font-size: 0.78rem;
+    padding: 8px 10px;
+  }
+
+  /* How It Works & Reviews */
+  .step-card {
+    padding: 22px 16px;
+  }
+  .testimonial-card {
+    padding: 22px 16px;
+  }
+
+  /* Footer */
+  .footer-accreditation-badge {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.68rem;
+    text-align: center;
+  }
+  .footer-bottom-links {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dot-sep {
+    display: none;
+  }
+}
+
+/* Ultra Small Screens (<= 360px) */
+@media (max-width: 360px) {
+  .nav-phone-link {
+    display: none;
+  }
+  .hero-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-card {
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 }

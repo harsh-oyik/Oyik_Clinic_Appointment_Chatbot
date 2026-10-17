@@ -68,14 +68,15 @@ export default function App() {
         <div className="container strip-container">
           <div className="strip-left">
             <span className="strip-dot"></span>
-            <span>Oyik Clinic & Heritage Health Sanctuary • Accepting New In-Clinic & Telehealth Patients</span>
+            <span className="strip-text-desktop">Oyik Clinic & Heritage Health Sanctuary • Accepting In-Clinic & Telehealth</span>
+            <span className="strip-text-mobile">Oyik Clinic • Accepting Patients</span>
           </div>
           <div className="strip-right">
             <span className="strip-schedule-info">
-              Mon – Sat: 8:00 AM – 8:00 PM • Valet Parking & Accessible Elevator
+              Mon – Sat: 8:00 AM – 8:00 PM
             </span>
-            <a href="tel:+18005556945" className="strip-btn">
-              Emergency & Reception: (800) 555-OYIK
+            <a href="tel:+18005556945" className="strip-btn" aria-label="Call clinic reception">
+              (800) 555-OYIK
             </a>
           </div>
         </div>
