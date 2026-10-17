@@ -2,8 +2,37 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bot, X, Send, Sparkles, Calendar, Clock, User, Phone, CheckCircle2, 
   Volume2, VolumeX, Maximize2, Minimize2, RotateCcw, AlertCircle, 
-  Download, ExternalLink, ChevronRight
+  Download, ExternalLink, ChevronRight, ShieldCheck, Lock, CheckCheck
 } from 'lucide-react';
+
+// Formatted message renderer with bold and clean line break support
+function FormattedMessageText({ text }) {
+  if (!text) return null;
+  const lines = text.split('\n');
+
+  return (
+    <div className="bubble-text">
+      {lines.map((line, lIdx) => {
+        if (!line.trim()) {
+          return <div key={lIdx} className="bubble-spacer" />;
+        }
+
+        // Render bold segments: **text**
+        const parts = line.split(/(\*\*.*?\*\*)/g);
+        return (
+          <p key={lIdx} className="bubble-line">
+            {parts.map((part, pIdx) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={pIdx}>{part.slice(2, -2)}</strong>;
+              }
+              return part;
+            })}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function OyikChatbot({ 
   isOpen, 
@@ -67,7 +96,7 @@ export default function OyikChatbot({
         id: 'welcome-1',
         sender: 'bot',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: "Namaste & Welcome to Oyik Clinic! 🌿 I am your personal Appointment Concierge. How may I assist your health and wellness journey today?",
+        text: "Namaste & Welcome to Oyik Clinic! 🌿 I am your personal Appointment Concierge.\n\nI can help you check specialist availability, schedule an in-clinic or telehealth consultation, or answer questions regarding our heritage and modern clinical therapies.",
         quickReplies: [
           "📅 Book New Appointment",
           "🌿 Heritage Ayurveda Consult",
@@ -107,24 +136,27 @@ export default function OyikChatbot({
       name: "Dr. Ananya Sharma",
       specialty: "Heritage & Integrative Medicine",
       image: "/assets/doctor-heritage.jpg",
-      exp: "24 yrs exp",
-      nextSlot: "Today 04:30 PM"
+      exp: "24 yrs clinical exp",
+      nextSlot: "Today 04:30 PM",
+      rating: "4.98 (340+ reviews)"
     },
     {
       id: "julian",
       name: "Dr. Julian Vance",
       specialty: "Executive Cardiology",
       image: "/assets/doctor-cardio.jpg",
-      exp: "16 yrs exp",
-      nextSlot: "Today 03:15 PM"
+      exp: "16 yrs clinical exp",
+      nextSlot: "Today 03:15 PM",
+      rating: "4.96 (280+ reviews)"
     },
     {
       id: "sarah",
       name: "Dr. Sarah Jensen",
       specialty: "Dermatology & Aesthetics",
       image: "/assets/doctor-derma.jpg",
-      exp: "12 yrs exp",
-      nextSlot: "Today 05:00 PM"
+      exp: "12 yrs clinical exp",
+      nextSlot: "Today 05:00 PM",
+      rating: "4.99 (410+ reviews)"
     }
   ];
 
@@ -244,7 +276,7 @@ export default function OyikChatbot({
         {
           id: 'bot_' + Date.now(),
           sender: 'bot',
-          text: "📍 **Oyik Clinic & Heritage Health Sanctuary**\n• Address: 14 Lotus Heritage Boulevard, Medical District\n• Hours: Monday – Saturday: 8:00 AM – 8:00 PM\n• Sunday: 9:00 AM – 2:00 PM (Emergency & Prior Bookings)\n• Valet parking and accessible elevator available on site.",
+          text: "📍 **Oyik Clinic & Heritage Health Sanctuary**\n• **Address:** 14 Lotus Heritage Boulevard, Central Medical District\n• **Consultation Hours:** Monday – Saturday: 8:00 AM – 8:00 PM\n• **Sunday:** 9:00 AM – 2:00 PM (Emergency & Prior Priority Bookings)\n• **Amenities:** Valet parking, private consultation suites, and wheelchair accessible elevator.",
           quickReplies: ["📅 Book Appointment Now", "👨‍⚕️ View Specialists"],
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
@@ -255,7 +287,7 @@ export default function OyikChatbot({
         {
           id: 'bot_' + Date.now(),
           sender: 'bot',
-          text: `Thank you for reaching out regarding "${input}". At Oyik Clinic, we offer both classical heritage therapies and modern diagnostic consultations. Would you like to book an appointment with our specialist?`,
+          text: `Thank you for your inquiry regarding "${input}". At Oyik Clinic, we harmonize classical holistic medicine with modern diagnostic consultations. Would you like to schedule an appointment with our specialist?`,
           quickReplies: [
             "📅 Yes, Book Appointment",
             "🌿 Consult Dr. Ananya",
@@ -303,7 +335,7 @@ export default function OyikChatbot({
       {
         id: 'bot_' + Date.now(),
         sender: 'bot',
-        text: `Great, slot booked for **${timeStr}**. Almost done! Please provide your contact details to generate your verified appointment confirmation slip:`,
+        text: `Slot confirmed for **${timeStr}**. Please provide the patient's contact details to generate your verified digital appointment pass:`,
         type: 'patient-details-form',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
@@ -326,7 +358,7 @@ export default function OyikChatbot({
       {
         id: 'bot_' + Date.now(),
         sender: 'bot',
-        text: `🎉 **Appointment Successfully Confirmed!**\n\nYour appointment reference is **#${refCode}**. A WhatsApp & SMS confirmation has been dispatched to ${patientDetails.phone}.`,
+        text: `🎉 **Appointment Confirmed!**\n\nYour appointment reference is **#${refCode}**. A verified WhatsApp & SMS confirmation pass has been dispatched to ${patientDetails.phone}.`,
         type: 'confirmation-card',
         bookingData: updatedState,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -337,31 +369,31 @@ export default function OyikChatbot({
 
   const handleDownloadSlip = (data) => {
     const slipText = `=================================================
-             OYIK CLINIC • HERITAGE CARE
-           APPOINTMENT CONFIRMATION SLIP
+             OYIK CLINIC • HERITAGE SANCTUARY
+            OFFICIAL APPOINTMENT PASS & RECEIPT
 =================================================
 Booking Reference : ${data.referenceId || 'OYIK-2026-CONFIRMED'}
 Date & Time       : ${data.date || 'Today'}, ${data.time || '11:15 AM'}
-Specialist        : ${data.doctor?.name || 'Dr. Ananya Sharma'}
+Consulting Doctor : ${data.doctor?.name || 'Dr. Ananya Sharma'}
 Department        : ${data.doctor?.specialty || 'Heritage Medicine'}
 Patient Name      : ${data.name || 'Valued Patient'}
-Contact Number    : ${data.phone || '+1 555-0192'}
+Contact Number    : ${data.phone || '+1 (800) 555-OYIK'}
 
-Location:
+Sanctuary Location:
 Oyik Clinic Heritage Sanctuary, 14 Lotus Blvd, Medical District
-Phone: +1 (800) 555-OYIK | Email: appointments@oyikclinic.com
+Phone: +1 (800) 555-OYIK | Email: concierge@oyikclinic.com
 
 Instructions:
-1. Please arrive 10 minutes prior to your slot time.
-2. Bring any prior lab reports or health history.
-3. Complimentary herbal infusion served in our heritage lounge.
+1. Please arrive 10 minutes prior to your designated slot.
+2. Present this digital pass or your booking reference at reception.
+3. Complimentary herbal infusions served in our heritage lounge.
 =================================================`;
 
     const blob = new Blob([slipText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Oyik_Appointment_${data.referenceId || 'Pass'}.txt`;
+    a.download = `Oyik_Appointment_Pass_${data.referenceId || 'Confirmed'}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -376,7 +408,7 @@ Instructions:
       id: 'welcome_' + Date.now(),
       sender: 'bot',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: "Namaste & Welcome to Oyik Clinic! 🌿 I am your personal Appointment Concierge. How may I assist your health and wellness journey today?",
+      text: "Namaste & Welcome to Oyik Clinic! 🌿 I am your personal Appointment Concierge.\n\nHow may I assist your health and wellness journey today?",
       quickReplies: [
         "📅 Book New Appointment",
         "🌿 Heritage Ayurveda Consult",
@@ -413,15 +445,18 @@ Instructions:
             <span className="avatar-status-badge"></span>
           </div>
 
-          <div>
+          <div className="header-text-block">
             <div className="header-title-row">
-              <h4>Oyik Clinic Concierge</h4>
+              <h4>Oyik Medical Concierge</h4>
+              <span className="header-verified-icon" title="Verified Medical Practice">
+                <ShieldCheck size={14} className="text-gold" />
+              </span>
               <span className="header-online-pill">
                 <span className="online-indicator-dot"></span>
-                <span>Online</span>
+                <span>Active</span>
               </span>
             </div>
-            <p className="header-subtitle">Heritage Healthcare Concierge</p>
+            <p className="header-subtitle">Heritage Sanctuary • Live Scheduling</p>
           </div>
         </div>
 
@@ -432,6 +467,7 @@ Instructions:
             className="header-icon-btn" 
             onClick={() => setSoundEnabled(!soundEnabled)}
             title={soundEnabled ? "Mute audio chimes" : "Enable audio chimes"}
+            aria-label="Toggle sound"
           >
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
@@ -440,7 +476,8 @@ Instructions:
             type="button" 
             className="header-icon-btn" 
             onClick={handleResetChat}
-            title="Restart conversation"
+            title="Start fresh consultation"
+            aria-label="Reset consultation"
           >
             <RotateCcw size={16} />
           </button>
@@ -450,6 +487,7 @@ Instructions:
             className="header-icon-btn" 
             onClick={() => setIsExpanded(!isExpanded)}
             title={isExpanded ? "Collapse view" : "Expand window"}
+            aria-label="Toggle expansion"
           >
             {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
@@ -458,7 +496,8 @@ Instructions:
             type="button" 
             className="header-icon-btn close-btn" 
             onClick={onClose}
-            title="Close chatbot"
+            title="Close concierge"
+            aria-label="Close chatbot"
           >
             <X size={18} />
           </button>
@@ -467,6 +506,12 @@ Instructions:
 
       {/* Chat Messages Body */}
       <div className="chat-messages-body">
+        {/* Confidential Session Security Banner */}
+        <div className="chat-session-badge">
+          <Lock size={11} className="text-gold" />
+          <span>Encrypted Healthcare Session • HIPAA Confidential</span>
+        </div>
+
         {messages.map((msg) => (
           <div 
             key={msg.id} 
@@ -479,11 +524,7 @@ Instructions:
             )}
 
             <div className={`chat-bubble ${msg.sender === 'user' ? 'user-bubble' : 'bot-bubble'} ${msg.isError ? 'error-bubble' : ''}`}>
-              <div className="bubble-text">
-                {msg.text.split('\n').map((line, lIdx) => (
-                  <p key={lIdx}>{line}</p>
-                ))}
-              </div>
+              <FormattedMessageText text={msg.text} />
 
               {/* Doctor Picker Component */}
               {msg.type === 'doctor-picker' && (
@@ -493,14 +534,28 @@ Instructions:
                       key={doc.id} 
                       className="picker-doc-card"
                       onClick={() => handleSelectDoctor(doc)}
+                      role="button"
+                      tabIndex={0}
                     >
-                      <img src={doc.image} alt={doc.name} className="picker-doc-thumb" />
-                      <div className="picker-doc-info">
-                        <strong>{doc.name}</strong>
-                        <span>{doc.specialty}</span>
-                        <div className="picker-slot-chip">Next: {doc.nextSlot}</div>
+                      <div className="picker-doc-avatar-wrap">
+                        <img src={doc.image} alt={doc.name} className="picker-doc-thumb" />
+                        <span className="picker-doc-online-dot"></span>
                       </div>
-                      <ChevronRight size={16} className="text-gold" />
+                      <div className="picker-doc-info">
+                        <div className="picker-doc-name-row">
+                          <strong>{doc.name}</strong>
+                          <span className="picker-doc-exp">{doc.exp}</span>
+                        </div>
+                        <span className="picker-doc-spec">{doc.specialty}</span>
+                        <div className="picker-slot-chip">
+                          <Clock size={11} />
+                          <span>Earliest Slot: {doc.nextSlot}</span>
+                        </div>
+                      </div>
+                      <div className="picker-select-btn">
+                        <span>Select</span>
+                        <ChevronRight size={14} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -511,27 +566,36 @@ Instructions:
                 <div className="interactive-date-chips">
                   <button 
                     type="button" 
-                    className="date-chip" 
+                    className="date-chip priority-chip" 
                     onClick={() => handleSelectDate("Today (Immediate Priority)")}
                   >
-                    <Calendar size={14} />
-                    <span>Today</span>
+                    <div className="chip-icon-box"><Calendar size={13} /></div>
+                    <div className="chip-text-wrap">
+                      <span className="chip-primary-text">Today</span>
+                      <span className="chip-sub-text">Immediate Slot</span>
+                    </div>
                   </button>
                   <button 
                     type="button" 
                     className="date-chip" 
                     onClick={() => handleSelectDate("Tomorrow Morning")}
                   >
-                    <Calendar size={14} />
-                    <span>Tomorrow</span>
+                    <div className="chip-icon-box"><Calendar size={13} /></div>
+                    <div className="chip-text-wrap">
+                      <span className="chip-primary-text">Tomorrow</span>
+                      <span className="chip-sub-text">Morning / Afternoon</span>
+                    </div>
                   </button>
                   <button 
                     type="button" 
                     className="date-chip" 
                     onClick={() => handleSelectDate("This Saturday (Weekend Clinic)")}
                   >
-                    <Calendar size={14} />
-                    <span>This Saturday</span>
+                    <div className="chip-icon-box"><Calendar size={13} /></div>
+                    <div className="chip-text-wrap">
+                      <span className="chip-primary-text">This Saturday</span>
+                      <span className="chip-sub-text">Weekend Clinic</span>
+                    </div>
                   </button>
                 </div>
               )}
@@ -546,7 +610,7 @@ Instructions:
                       className="time-chip"
                       onClick={() => handleSelectTime(slot)}
                     >
-                      <Clock size={13} />
+                      <Clock size={12} className="time-chip-icon" />
                       <span>{slot}</span>
                     </button>
                   ))}
@@ -561,31 +625,48 @@ Instructions:
               {/* Confirmation Card Component */}
               {msg.type === 'confirmation-card' && msg.bookingData && (
                 <div className="appointment-ticket-card">
-                  <div className="ticket-top">
-                    <div className="ticket-badge">CONFIRMED APPOINTMENT</div>
-                    <div className="ticket-id">#{msg.bookingData.referenceId}</div>
+                  <div className="ticket-top-banner">
+                    <div className="ticket-emblem-wrap">
+                      <img src="/assets/logo.png" alt="Oyik Logo" className="ticket-logo-img" />
+                      <div>
+                        <div className="ticket-clinic-name">OYIK CLINIC • SANCTUARY</div>
+                        <div className="ticket-sub">OFFICIAL APPOINTMENT PASS</div>
+                      </div>
+                    </div>
+                    <div className="ticket-verified-pill">
+                      <CheckCircle2 size={12} />
+                      <span>CONFIRMED</span>
+                    </div>
                   </div>
 
-                  <div className="ticket-details">
-                    <div className="ticket-row">
-                      <span className="row-label">Doctor:</span>
-                      <strong className="row-value">{msg.bookingData.doctor?.name || 'Dr. Ananya Sharma'}</strong>
+                  <div className="ticket-ref-bar">
+                    <span className="ref-title">BOOKING REFERENCE</span>
+                    <strong className="ref-code">#{msg.bookingData.referenceId}</strong>
+                  </div>
+
+                  <div className="ticket-details-grid">
+                    <div className="ticket-grid-item">
+                      <span className="item-label">Consulting Specialist</span>
+                      <strong className="item-value highlight">{msg.bookingData.doctor?.name || 'Dr. Ananya Sharma'}</strong>
+                      <span className="item-sub">{msg.bookingData.doctor?.specialty || 'Heritage Medicine'}</span>
                     </div>
-                    <div className="ticket-row">
-                      <span className="row-label">Department:</span>
-                      <span className="row-value">{msg.bookingData.doctor?.specialty || 'Heritage Medicine'}</span>
+
+                    <div className="ticket-grid-item">
+                      <span className="item-label">Scheduled Time</span>
+                      <strong className="item-value text-gold">{msg.bookingData.date}</strong>
+                      <span className="item-sub text-gold-light">{msg.bookingData.time}</span>
                     </div>
-                    <div className="ticket-row">
-                      <span className="row-label">Date & Time:</span>
-                      <strong className="row-value text-gold">{msg.bookingData.date}, {msg.bookingData.time}</strong>
+
+                    <div className="ticket-grid-item">
+                      <span className="item-label">Patient Name</span>
+                      <strong className="item-value">{msg.bookingData.name}</strong>
+                      <span className="item-sub">{msg.bookingData.phone}</span>
                     </div>
-                    <div className="ticket-row">
-                      <span className="row-label">Patient:</span>
-                      <span className="row-value">{msg.bookingData.name} ({msg.bookingData.phone})</span>
-                    </div>
-                    <div className="ticket-row">
-                      <span className="row-label">Location:</span>
-                      <span className="row-value">Oyik Heritage Sanctuary, 14 Lotus Blvd</span>
+
+                    <div className="ticket-grid-item">
+                      <span className="item-label">Consultation Venue</span>
+                      <strong className="item-value">Oyik Heritage Sanctuary</strong>
+                      <span className="item-sub">14 Lotus Blvd • Suite 4B</span>
                     </div>
                   </div>
 
@@ -595,8 +676,8 @@ Instructions:
                       className="ticket-btn btn-slip"
                       onClick={() => handleDownloadSlip(msg.bookingData)}
                     >
-                      <Download size={14} />
-                      <span>Download Slip</span>
+                      <Download size={15} />
+                      <span>Download Digital Pass</span>
                     </button>
 
                     <a 
@@ -605,9 +686,14 @@ Instructions:
                       rel="noopener noreferrer"
                       className="ticket-btn btn-cal"
                     >
-                      <Calendar size={14} />
-                      <span>Add to Google Calendar</span>
+                      <Calendar size={15} />
+                      <span>Add to Calendar</span>
                     </a>
+                  </div>
+
+                  <div className="ticket-barcode-footer">
+                    <span className="barcode-mock">||| | |||| | |||||| || | |||| ||| |||| |</span>
+                    <span className="barcode-label">Present this pass at clinic reception for priority check-in</span>
                   </div>
                 </div>
               )}
@@ -628,21 +714,29 @@ Instructions:
                 </div>
               )}
 
-              <span className="bubble-timestamp">{msg.timestamp}</span>
+              <div className="bubble-footer-row">
+                <span className="bubble-timestamp">{msg.timestamp}</span>
+                {msg.sender === 'user' && (
+                  <CheckCheck size={12} className="msg-delivered-icon" />
+                )}
+              </div>
             </div>
           </div>
         ))}
 
         {/* Typing indicator */}
         {isTyping && (
-          <div className="chat-bubble-row bot-row">
+          <div className="chat-bubble-row bot-row animate-fade-in">
             <div className="bot-bubble-avatar">
               <img src="/assets/chatbot-avatar.jpg" alt="Oyik AI" />
             </div>
             <div className="chat-bubble bot-bubble typing-bubble">
-              <span className="typing-dot"></span>
-              <span className="typing-dot"></span>
-              <span className="typing-dot"></span>
+              <span className="typing-label">Oyik Concierge is typing</span>
+              <div className="typing-dots-wrap">
+                <span className="typing-dot"></span>
+                <span className="typing-dot"></span>
+                <span className="typing-dot"></span>
+              </div>
             </div>
           </div>
         )}
@@ -651,30 +745,36 @@ Instructions:
       </div>
 
       {/* Chat Input Bar */}
-      <form 
-        className="chat-input-area"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleUserSend();
-        }}
-      >
-        <input
-          ref={inputRef}
-          type="text"
-          className="chat-text-input"
-          placeholder="Type your message or appointment request..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-        />
-        <button 
-          type="submit" 
-          className="chat-send-btn"
-          disabled={!inputValue.trim()}
-          aria-label="Send message"
+      <div className="chat-input-wrapper">
+        <form 
+          className="chat-input-area"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleUserSend();
+          }}
         >
-          <Send size={18} />
-        </button>
-      </form>
+          <input
+            ref={inputRef}
+            type="text"
+            className="chat-text-input"
+            placeholder="Type your health inquiry or appointment need..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+          />
+          <button 
+            type="submit" 
+            className="chat-send-btn"
+            disabled={!inputValue.trim()}
+            aria-label="Send message"
+          >
+            <Send size={17} />
+          </button>
+        </form>
+        <div className="chat-security-footer">
+          <Lock size={10} />
+          <span>Official Oyik Clinic Concierge • 256-bit Encrypted Consultation</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -692,36 +792,57 @@ function PatientForm({ onSubmit }) {
 
   return (
     <form className="chat-patient-form" onSubmit={handleSubmit}>
+      <div className="form-card-header">
+        <div className="form-header-title">
+          <User size={15} className="text-gold" />
+          <span>Patient Intake & Pass Details</span>
+        </div>
+        <span className="form-secure-tag">
+          <Lock size={10} /> Confidential
+        </span>
+      </div>
+
       <div className="form-inner-group">
         <label>
-          <User size={13} />
-          <span>Patient Full Name</span>
+          <span>Patient Full Legal Name</span>
         </label>
-        <input 
-          type="text" 
-          required 
-          placeholder="e.g. Eleanor Vance" 
-          value={name} 
-          onChange={(e) => setName(e.target.value)} 
-        />
+        <div className="input-with-icon">
+          <User size={15} className="input-icon" />
+          <input 
+            type="text" 
+            required 
+            placeholder="e.g. Eleanor Vance" 
+            value={name} 
+            onChange={(e) => setName(e.target.value)} 
+          />
+        </div>
       </div>
+
       <div className="form-inner-group">
         <label>
-          <Phone size={13} />
-          <span>Phone / WhatsApp Number</span>
+          <span>Mobile / WhatsApp Number (for SMS Pass)</span>
         </label>
-        <input 
-          type="tel" 
-          required 
-          placeholder="e.g. +1 555-0192" 
-          value={phone} 
-          onChange={(e) => setPhone(e.target.value)} 
-        />
+        <div className="input-with-icon">
+          <Phone size={15} className="input-icon" />
+          <input 
+            type="tel" 
+            required 
+            placeholder="e.g. +1 (555) 019-2834" 
+            value={phone} 
+            onChange={(e) => setPhone(e.target.value)} 
+          />
+        </div>
       </div>
-      <button type="submit" className="btn btn-gold btn-sm btn-full">
-        <CheckCircle2 size={15} />
-        <span>Confirm Appointment Pass</span>
+
+      <button type="submit" className="btn btn-gold btn-sm btn-full form-submit-btn">
+        <CheckCircle2 size={16} />
+        <span>Generate Verified Appointment Pass</span>
       </button>
+
+      <div className="form-footer-privacy">
+        <ShieldCheck size={12} />
+        <span>Your information is protected under strict clinical privacy protocols.</span>
+      </div>
     </form>
   );
 }
