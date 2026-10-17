@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bot, X, Send, Sparkles, Calendar, Clock, User, Phone, CheckCircle2, 
   Volume2, VolumeX, Maximize2, Minimize2, RotateCcw, AlertCircle, 
-  Download, ExternalLink, ChevronRight, Settings
+  Download, ExternalLink, ChevronRight
 } from 'lucide-react';
 
 export default function OyikChatbot({ 
@@ -10,8 +10,6 @@ export default function OyikChatbot({
   onClose, 
   initialPrompt, 
   webhookUrl, 
-  isN8nActive, 
-  onOpenN8nConfig,
   sessionId,
   onResetSession
 }) {
@@ -152,8 +150,8 @@ export default function OyikChatbot({
     playChime('send');
     setIsTyping(true);
 
-    // If n8n webhook is active and URL is set, call n8n!
-    if (isN8nActive && webhookUrl) {
+    // If webhook is configured, call the appointment concierge workflow!
+    if (webhookUrl) {
       try {
         const response = await fetch(webhookUrl, {
           method: 'POST',
@@ -184,8 +182,7 @@ export default function OyikChatbot({
             id: 'bot_' + Date.now(),
             sender: 'bot',
             text: botReplyText || "Received your message at Oyik Clinic.",
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            source: 'n8n'
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           };
 
           setIsTyping(false);
@@ -201,9 +198,9 @@ export default function OyikChatbot({
           id: 'bot_err_' + Date.now(),
           sender: 'bot',
           isError: true,
-          text: `⚠️ Could not reach your n8n webhook (${err.message}). Make sure your n8n workflow is active or running with CORS allowed. Would you like to switch to built-in simulation mode?`,
+          text: "Our appointment concierge is currently experiencing high demand. Please try again or reach our 24/7 reception desk at (800) 555-OYIK for immediate priority scheduling.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          quickReplies: ["Switch to Simulation Mode", "Configure n8n Webhook"]
+          quickReplies: ["📅 Book New Appointment", "🌿 Heritage Ayurveda Consult", "❤️ Cardiology with Dr. Julian"]
         };
         setMessages(prev => [...prev, errorMessage]);
         playChime('receive');
@@ -252,19 +249,6 @@ export default function OyikChatbot({
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
-    } else if (text.includes("switch to simulation")) {
-      setMessages(prev => [
-        ...prev,
-        {
-          id: 'bot_' + Date.now(),
-          sender: 'bot',
-          text: "Switched to Built-in Interactive Demo Mode! You can test booking with any doctor now.",
-          quickReplies: ["📅 Book New Appointment", "🌿 Heritage Ayurveda Consult", "❤️ Cardiology"],
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
-    } else if (text.includes("configure n8n")) {
-      onOpenN8nConfig();
     } else {
       setMessages(prev => [
         ...prev,
@@ -431,13 +415,10 @@ Instructions:
 
           <div>
             <div className="header-title-row">
-              <h4>Oyik Clinic Appointment Bot</h4>
-              <span 
-                className={`header-mode-tag ${isN8nActive ? 'tag-n8n' : 'tag-demo'}`}
-                onClick={onOpenN8nConfig}
-                title="Click to configure n8n webhook"
-              >
-                {isN8nActive ? '⚡ n8n Live' : '🧪 Demo Mode'}
+              <h4>Oyik Clinic Concierge</h4>
+              <span className="header-online-pill">
+                <span className="online-indicator-dot"></span>
+                <span>Online</span>
               </span>
             </div>
             <p className="header-subtitle">Heritage Healthcare Concierge</p>
@@ -453,15 +434,6 @@ Instructions:
             title={soundEnabled ? "Mute audio chimes" : "Enable audio chimes"}
           >
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-
-          <button 
-            type="button" 
-            className="header-icon-btn" 
-            onClick={onOpenN8nConfig}
-            title="Configure n8n Webhook"
-          >
-            <Settings size={16} />
           </button>
 
           <button 
@@ -512,14 +484,6 @@ Instructions:
                   <p key={lIdx}>{line}</p>
                 ))}
               </div>
-
-              {/* Source tag if response came from n8n */}
-              {msg.source === 'n8n' && (
-                <div className="n8n-tag-badge">
-                  <Sparkles size={11} />
-                  <span>Powered by your n8n workflow</span>
-                </div>
-              )}
 
               {/* Doctor Picker Component */}
               {msg.type === 'doctor-picker' && (
@@ -698,7 +662,7 @@ Instructions:
           ref={inputRef}
           type="text"
           className="chat-text-input"
-          placeholder={isN8nActive ? "Ask Oyik AI (sending to your n8n workflow)..." : "Type your message or appointment need..."}
+          placeholder="Type your message or appointment request..."
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
         />

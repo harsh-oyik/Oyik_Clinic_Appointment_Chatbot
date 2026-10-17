@@ -33,7 +33,7 @@ export default function HowItWorks({ onOpenChat }) {
           <div className="badge-heritage">Simple & Seamless</div>
           <h2>How The Oyik AI Appointment System Works</h2>
           <p>
-            Say goodbye to hold music, manual receptionist scheduling, or missed appointments. Our n8n-powered chatbot automates your appointment workflow smoothly.
+            Say goodbye to hold music, telephone queues, or waiting on hold. Our dedicated appointment concierge automatically matches you with specialists and confirms your slot in seconds.
           </p>
         </div>
 

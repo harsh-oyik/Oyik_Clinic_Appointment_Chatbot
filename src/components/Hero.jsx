@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bot, Calendar, Sparkles, CheckCircle2, Clock, ShieldCheck, ArrowRight } from 'lucide-react';
 
-export default function Hero({ onOpenChat, onOpenN8nConfig, isN8nActive }) {
+export default function Hero({ onOpenChat }) {
   return (
     <section className="hero-section">
       <div className="container hero-container">
@@ -31,14 +31,13 @@ export default function Hero({ onOpenChat, onOpenN8nConfig, isN8nActive }) {
               <span>Book Appointment via Oyik AI</span>
             </button>
 
-            <button 
-              type="button" 
+            <a 
+              href="#specialties" 
               className="btn btn-outline"
-              onClick={onOpenN8nConfig}
             >
-              <Sparkles size={18} color="#c59d5f" />
-              <span>{isN8nActive ? 'View n8n Settings' : 'Connect n8n Workflow'}</span>
-            </button>
+              <span>Explore Specialties</span>
+              <ArrowRight size={16} />
+            </a>
           </div>
 
           {/* Key Value Points */}

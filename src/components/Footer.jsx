@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bot, MapPin, Phone, Mail, Clock, ShieldCheck, Heart } from 'lucide-react';
 
-export default function Footer({ onOpenChat, onOpenN8nConfig, isN8nActive }) {
+export default function Footer({ onOpenChat }) {
   return (
     <footer className="footer-section">
       <div className="container footer-container">
@@ -22,16 +22,9 @@ export default function Footer({ onOpenChat, onOpenN8nConfig, isN8nActive }) {
               Blending timeless holistic traditions with contemporary clinical precision. We believe healing happens when centuries of wisdom meet modern diagnostic compassion.
             </p>
 
-            <div className="footer-n8n-badge">
+            <div className="footer-accreditation-badge">
               <span className="dot-green"></span>
-              <span>Chatbot Powered by n8n ({isN8nActive ? 'Live Mode' : 'Interactive Demo'})</span>
-              <button 
-                type="button" 
-                className="footer-n8n-link"
-                onClick={onOpenN8nConfig}
-              >
-                Configure
-              </button>
+              <span>Accredited Healthcare & Heritage Wellness Sanctuary</span>
             </div>
           </div>
 
@@ -111,7 +104,7 @@ export default function Footer({ onOpenChat, onOpenN8nConfig, isN8nActive }) {
             <span className="dot-sep">•</span>
             <a href="#">Terms of Care</a>
             <span className="dot-sep">•</span>
-            <a href="#" onClick={(e) => { e.preventDefault(); onOpenN8nConfig(); }}>n8n Webhook Settings</a>
+            <a href="#">HIPAA & Confidentiality</a>
           </div>
         </div>
       </div>

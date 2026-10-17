@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Sparkles, Bot, Settings, Calendar, Menu, X, ShieldCheck } from 'lucide-react';
+import { Bot, Calendar, Phone, Menu, X } from 'lucide-react';
 
-export default function Navbar({ onOpenChat, onOpenN8nConfig, n8nWebhookUrl, isN8nActive }) {
+export default function Navbar({ onOpenChat }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -29,19 +29,10 @@ export default function Navbar({ onOpenChat, onOpenN8nConfig, n8nWebhookUrl, isN
 
         {/* Action Buttons */}
         <div className="nav-actions">
-          {/* n8n Status / Config Button */}
-          <button 
-            type="button"
-            className={`n8n-status-pill ${isN8nActive ? 'active' : 'demo'}`}
-            onClick={onOpenN8nConfig}
-            title="Configure or test your n8n chatbot webhook"
-          >
-            <span className="status-dot"></span>
-            <span className="status-text">
-              {isN8nActive ? 'n8n Connected' : 'n8n: Demo Mode'}
-            </span>
-            <Settings size={14} className="settings-icon" />
-          </button>
+          <a href="tel:+18005556945" className="nav-phone-link">
+            <Phone size={14} className="text-gold" />
+            <span>(800) 555-OYIK</span>
+          </a>
 
           {/* Book Appointment CTA */}
           <button 
@@ -50,7 +41,7 @@ export default function Navbar({ onOpenChat, onOpenN8nConfig, n8nWebhookUrl, isN
             onClick={() => onOpenChat()}
           >
             <Bot size={17} />
-            <span>Book with Oyik AI</span>
+            <span>Book Appointment</span>
           </button>
 
           {/* Mobile Menu Toggle */}
@@ -74,19 +65,19 @@ export default function Navbar({ onOpenChat, onOpenN8nConfig, n8nWebhookUrl, isN
           <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How It Works</a>
           <a href="#reviews" onClick={() => setMobileMenuOpen(false)}>Reviews</a>
           <div className="mobile-drawer-actions">
-            <button 
-              type="button"
+            <a 
+              href="tel:+18005556945"
               className="btn btn-outline btn-sm"
-              onClick={() => { setMobileMenuOpen(false); onOpenN8nConfig(); }}
+              onClick={() => setMobileMenuOpen(false)}
             >
-              <Settings size={16} /> Configure n8n Webhook
-            </button>
+              <Phone size={15} /> Call Reception
+            </a>
             <button 
               type="button"
               className="btn btn-gold btn-sm"
               onClick={() => { setMobileMenuOpen(false); onOpenChat(); }}
             >
-              <Bot size={16} /> Open Oyik Chatbot
+              <Bot size={16} /> Book via Oyik AI
             </button>
           </div>
         </div>

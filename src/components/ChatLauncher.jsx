@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, MessageSquare, X, Sparkles } from 'lucide-react';
 
-export default function ChatLauncher({ isOpen, onToggle, isN8nActive }) {
+export default function ChatLauncher({ isOpen, onToggle }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function ChatLauncher({ isOpen, onToggle, isN8nActive }) {
           <div className="tooltip-header">
             <span className="tooltip-badge">
               <Sparkles size={11} />
-              {isN8nActive ? 'n8n Live' : 'AI Assistant'}
+              Appointment Concierge
             </span>
             <button 
               type="button" 
