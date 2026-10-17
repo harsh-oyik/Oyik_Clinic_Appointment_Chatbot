@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Navbar from './components/Navbar';
@@ -12,35 +13,26 @@ import OyikChatbot from './components/OyikChatbot';
 import ChatLauncher from './components/ChatLauncher';
 import N8nModal from './components/N8nModal';
 
-const DEFAULT_WEBHOOK_URL = 'https://oyik.cloud/webhook/754890e6-d157-481d-9fa1-32d8563e39e9/chat';
+const DEFAULT_WEBHOOK_URL =
+  'https://oyik.cloud/webhook/754890e6-d157-481d-9fa1-32d8563e39e9/chat';
 
 export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
   const [isN8nModalOpen, setIsN8nModalOpen] = useState(false);
 
-  // Stored n8n webhook settings (defaults to live user n8n webhook)
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
   const [isN8nActive, setIsN8nActive] = useState(true);
 
   useEffect(() => {
-    const savedUrl = localStorage.getItem('oyik_n8n_webhook_url');
-    const savedActive = localStorage.getItem('oyik_n8n_is_active');
+    // Always use the new clinic appointment webhook.
+    // Do not allow an old URL saved in localStorage to override it.
+    setWebhookUrl(DEFAULT_WEBHOOK_URL);
+    localStorage.setItem('oyik_n8n_webhook_url', DEFAULT_WEBHOOK_URL);
 
-    // Always update to new DEFAULT_WEBHOOK_URL unless user configured a custom URL with 754890e6
-    if (savedUrl && savedUrl.includes('754890e6-d157-481d-9fa1-32d8563e39e9')) {
-      setWebhookUrl(savedUrl);
-    } else {
-      setWebhookUrl(DEFAULT_WEBHOOK_URL);
-      localStorage.setItem('oyik_n8n_webhook_url', DEFAULT_WEBHOOK_URL);
-    }
-
-    if (savedActive !== null) {
-      setIsN8nActive(savedActive === 'true');
-    } else {
-      setIsN8nActive(true);
-      localStorage.setItem('oyik_n8n_is_active', 'true');
-    }
+    // Enable the live n8n chatbot by default.
+    setIsN8nActive(true);
+    localStorage.setItem('oyik_n8n_is_active', 'true');
   }, []);
 
   const handleOpenChat = (prompt = '') => {
@@ -57,16 +49,26 @@ export default function App() {
   };
 
   const handleSaveWebhook = (url) => {
-    setWebhookUrl(url);
-    const active = !!url;
-    setIsN8nActive(active);
-    localStorage.setItem('oyik_n8n_webhook_url', url);
-    localStorage.setItem('oyik_n8n_is_active', active ? 'true' : 'false');
+    const cleanedUrl = (url || '').trim();
+
+    if (!cleanedUrl) {
+      setWebhookUrl(DEFAULT_WEBHOOK_URL);
+      setIsN8nActive(true);
+      localStorage.setItem('oyik_n8n_webhook_url', DEFAULT_WEBHOOK_URL);
+      localStorage.setItem('oyik_n8n_is_active', 'true');
+      return;
+    }
+
+    setWebhookUrl(cleanedUrl);
+    setIsN8nActive(true);
+
+    localStorage.setItem('oyik_n8n_webhook_url', cleanedUrl);
+    localStorage.setItem('oyik_n8n_is_active', 'true');
   };
 
   const handleToggleMode = (isLive) => {
     setIsN8nActive(isLive);
-    localStorage.setItem('oyik_n8n_is_active', isLive ? 'true' : 'false');
+    localStorage.setItem('oyik_n8n_is_active', String(isLive));
   };
 
   return (
