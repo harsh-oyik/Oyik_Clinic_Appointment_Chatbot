@@ -18,7 +18,7 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
   const [isN8nModalOpen, setIsN8nModalOpen] = useState(false);
-  
+
   // Stored n8n webhook settings (defaults to live user n8n webhook)
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
   const [isN8nActive, setIsN8nActive] = useState(true);
@@ -26,9 +26,9 @@ export default function App() {
   useEffect(() => {
     const savedUrl = localStorage.getItem('oyik_n8n_webhook_url');
     const savedActive = localStorage.getItem('oyik_n8n_is_active');
-    
-    // If user has a custom URL that isn't the previous default, keep it; otherwise use the new DEFAULT_WEBHOOK_URL
-    if (savedUrl && savedUrl !== 'https://oyik.cloud/webhook/512863f9-37d0-44dd-969e-8b40dea06796/chat') {
+
+    // Always update to new DEFAULT_WEBHOOK_URL unless user configured a custom URL with 754890e6
+    if (savedUrl && savedUrl.includes('754890e6-d157-481d-9fa1-32d8563e39e9')) {
       setWebhookUrl(savedUrl);
     } else {
       setWebhookUrl(DEFAULT_WEBHOOK_URL);
@@ -82,9 +82,9 @@ export default function App() {
             <span className="strip-n8n-info">
               {isN8nActive ? '⚡ n8n Webhook Active' : '🧪 Chatbot running in Demo Mode'}
             </span>
-            <button 
-              type="button" 
-              className="strip-btn" 
+            <button
+              type="button"
+              className="strip-btn"
               onClick={() => setIsN8nModalOpen(true)}
             >
               Configure n8n URL
@@ -94,7 +94,7 @@ export default function App() {
       </div>
 
       {/* Main Navigation */}
-      <Navbar 
+      <Navbar
         onOpenChat={handleOpenChat}
         onOpenN8nConfig={() => setIsN8nModalOpen(true)}
         webhookUrl={webhookUrl}
@@ -103,7 +103,7 @@ export default function App() {
 
       <main>
         {/* Hero Section */}
-        <Hero 
+        <Hero
           onOpenChat={handleOpenChat}
           onOpenN8nConfig={() => setIsN8nModalOpen(true)}
           isN8nActive={isN8nActive}
@@ -126,14 +126,14 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer 
+      <Footer
         onOpenChat={handleOpenChat}
         onOpenN8nConfig={() => setIsN8nModalOpen(true)}
         isN8nActive={isN8nActive}
       />
 
       {/* Embedded Chatbot Window */}
-      <OyikChatbot 
+      <OyikChatbot
         isOpen={isChatOpen}
         onClose={handleCloseChat}
         initialPrompt={chatInitialPrompt}
@@ -143,14 +143,14 @@ export default function App() {
       />
 
       {/* Floating Bottom-Right Launcher */}
-      <ChatLauncher 
+      <ChatLauncher
         isOpen={isChatOpen}
         onToggle={handleToggleChat}
         isN8nActive={isN8nActive}
       />
 
       {/* n8n Webhook Configuration Modal */}
-      <N8nModal 
+      <N8nModal
         isOpen={isN8nModalOpen}
         onClose={() => setIsN8nModalOpen(false)}
         webhookUrl={webhookUrl}
