@@ -10,11 +10,7 @@ export default function Footer({ onOpenChat, onOpenN8nConfig, isN8nActive }) {
           <div className="footer-brand-col">
             <div className="footer-brand">
               <div className="brand-emblem-small">
-                <svg viewBox="0 0 40 40" className="brand-svg" fill="none">
-                  <circle cx="20" cy="20" r="18" stroke="#dfb776" strokeWidth="2" strokeDasharray="3 3" />
-                  <path d="M20 7 C14 15 10 23 20 33 C30 23 26 15 20 7 Z" fill="#dfb776" />
-                  <circle cx="20" cy="20" r="4" fill="#123830" />
-                </svg>
+                <img src="/assets/logo.png" alt="Oyik Clinic Logo" className="brand-logo-img" />
               </div>
               <div>
                 <span className="brand-title">OYIK CLINIC</span>
