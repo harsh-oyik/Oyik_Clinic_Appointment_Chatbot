@@ -113,8 +113,8 @@ h1, h2, h3, h4, .font-serif {
 }
 
 h1 {
-  font-size: clamp(2.3rem, 5.2vw, 4rem);
-  line-height: 1.15;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1.18;
   font-weight: 700;
 }
 
