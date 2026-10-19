@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Star, Calendar, Clock, Award, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Bot, Star, Clock, Award, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function Doctors({ onOpenChat }) {
   const doctors = [
@@ -60,46 +60,49 @@ export default function Doctors({ onOpenChat }) {
 
         <div className="doctors-grid">
           {doctors.map((doc) => (
-            <div key={doc.id} className="doctor-card glass-card">
-              {/* Doctor Image & Badge */}
+            <div key={doc.id} className="doc-card glass-card">
               <div className="doc-image-wrapper">
                 <img src={doc.image} alt={doc.name} className="doc-image" />
-                <span className="doc-badge">{doc.badge}</span>
-                <div className="doc-availability-pill">
-                  <span className="live-dot"></span>
-                  <span>{doc.available}</span>
+                <div className="doc-image-gradient" />
+                <span className="doc-badge-pill">{doc.badge}</span>
+                <div className="doc-rating-badge">
+                  <Star size={13} fill="#dfb776" stroke="#dfb776" />
+                  <span>{doc.rating}</span>
+                  <span className="rating-count">({doc.reviewsCount})</span>
                 </div>
               </div>
 
-              {/* Doctor Details */}
               <div className="doc-content">
-                <div className="doc-rating-row">
-                  <div className="star-rating">
-                    <Star size={15} fill="#dfb776" stroke="#dfb776" />
-                    <span>{doc.rating}</span>
-                  </div>
-                  <span className="rating-count">({doc.reviewsCount})</span>
-                  <span className="exp-tag">{doc.experience}</span>
+                <div className="doc-header-info">
+                  <h3 className="doc-name">{doc.name}</h3>
+                  <div className="doc-title">{doc.title}</div>
+                  <div className="doc-degrees">{doc.degrees}</div>
                 </div>
-
-                <h3 className="doc-name">{doc.name}</h3>
-                <div className="doc-title">{doc.title}</div>
-                <div className="doc-degrees">{doc.degrees}</div>
 
                 <p className="doc-bio">{doc.bio}</p>
 
-                {/* Card CTA */}
-                <div className="doc-card-footer">
-                  <button
-                    type="button"
-                    className="btn btn-gold btn-sm doc-book-btn"
-                    onClick={() => onOpenChat(doc.chatPrompt)}
-                  >
-                    <Bot size={16} />
-                    <span>Book with {doc.name.split(' ')[1]}</span>
-                    <ArrowRight size={14} />
-                  </button>
+                <div className="doc-meta-row">
+                  <div className="doc-experience">
+                    <Award size={15} className="text-gold" />
+                    <span>{doc.experience}</span>
+                  </div>
+
+                  <div className="doc-slot-status">
+                    <span className="live-dot-pulse"></span>
+                    <Clock size={13} />
+                    <span>{doc.available}</span>
+                  </div>
                 </div>
+
+                <button 
+                  type="button" 
+                  className="btn btn-gold btn-full doc-book-btn"
+                  onClick={() => onOpenChat(doc.chatPrompt)}
+                >
+                  <Bot size={17} />
+                  <span>Book with {doc.name.split(' ')[1]}</span>
+                  <ArrowRight size={15} />
+                </button>
               </div>
             </div>
           ))}

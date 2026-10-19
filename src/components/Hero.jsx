@@ -1,15 +1,16 @@
 import React from 'react';
-import { Bot, Calendar, Sparkles, CheckCircle2, Clock, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Bot, Sparkles, CheckCircle2, Clock, ShieldCheck, ArrowRight, Star, HeartPulse } from 'lucide-react';
 
 export default function Hero({ onOpenChat }) {
   return (
     <section className="hero-section">
+      <div className="hero-ambient-glow" aria-hidden="true" />
       <div className="container hero-container">
         {/* Left Column: Hero Copy */}
         <div className="hero-content">
           <div className="badge-heritage">
-            <Sparkles size={14} color="#c59d5f" />
-            <span>Integrative Heritage Healing & Modern Medicine</span>
+            <Sparkles size={14} className="text-gold" />
+            <span>Integrative Heritage Healing & Modern Diagnostics</span>
           </div>
 
           <h1 className="hero-title">
@@ -17,8 +18,27 @@ export default function Hero({ onOpenChat }) {
           </h1>
 
           <p className="hero-subtitle">
-            At <strong>Oyik Clinic</strong>, we harmonize centuries-old holistic traditions with modern precision diagnostics. Meet our intelligent concierge — the <strong>Oyik Clinic Appointment Chatbot</strong> — designed to match you with top specialists and confirm your visit in 30 seconds.
+            At <strong>Oyik Clinic</strong>, we harmonize centuries-old holistic wisdom with state-of-the-art medical diagnostics. Connect instantly with our intelligent AI concierge — designed to match you with top physicians and confirm your visit in seconds.
           </p>
+
+          {/* Social Proof Trust Stack */}
+          <div className="hero-trust-bar">
+            <div className="avatar-stack">
+              <img src="/assets/doctor-heritage.jpg" alt="Doctor" className="stack-avatar" />
+              <img src="/assets/doctor-cardio.jpg" alt="Doctor" className="stack-avatar" />
+              <img src="/assets/doctor-derma.jpg" alt="Doctor" className="stack-avatar" />
+              <div className="stack-avatar-count">50k+</div>
+            </div>
+            <div className="trust-text-group">
+              <div className="trust-stars-row">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={14} fill="#dfb776" stroke="#dfb776" />
+                ))}
+                <span className="trust-score">4.98/5.0</span>
+              </div>
+              <span className="trust-caption">Over 50,000 Verified Consultations</span>
+            </div>
+          </div>
 
           {/* Action CTAs */}
           <div className="hero-cta-group">
@@ -28,7 +48,7 @@ export default function Hero({ onOpenChat }) {
               onClick={() => onOpenChat()}
             >
               <Bot size={20} />
-              <span>Book Appointment via Oyik AI</span>
+              <span>Book Consultation via Oyik AI</span>
             </button>
 
             <a 
@@ -44,15 +64,15 @@ export default function Hero({ onOpenChat }) {
           <div className="hero-highlights">
             <div className="highlight-item">
               <CheckCircle2 size={16} className="text-gold" />
-              <span>No telephone queues</span>
+              <span>Zero Waiting Queues</span>
             </div>
             <div className="highlight-item">
               <CheckCircle2 size={16} className="text-gold" />
-              <span>Ayurvedic & Western specialists</span>
+              <span>Ayurvedic & Western Faculty</span>
             </div>
             <div className="highlight-item">
               <CheckCircle2 size={16} className="text-gold" />
-              <span>Instant WhatsApp & Calendar sync</span>
+              <span>Instant Digital Pass & Calendar Sync</span>
             </div>
           </div>
 
@@ -64,7 +84,7 @@ export default function Hero({ onOpenChat }) {
             </div>
             <div className="stat-card">
               <span className="stat-number">99.4%</span>
-              <span className="stat-label">Satisfaction Rate</span>
+              <span className="stat-label">Clinical Satisfaction</span>
             </div>
             <div className="stat-card">
               <span className="stat-number">30s</span>
@@ -75,6 +95,7 @@ export default function Hero({ onOpenChat }) {
 
         {/* Right Column: Hero Visual Image with Floating Cards */}
         <div className="hero-visual-wrapper">
+          <div className="hero-visual-glow" aria-hidden="true" />
           <div className="hero-image-frame">
             <img 
               src="/assets/hero-banner.jpg" 
@@ -91,7 +112,7 @@ export default function Hero({ onOpenChat }) {
               </div>
               <div>
                 <div className="floating-label">Appointments Today</div>
-                <div className="floating-value">4 Slots Available Now</div>
+                <div className="floating-value">4 Open Priority Slots</div>
               </div>
             </div>
 
@@ -103,11 +124,11 @@ export default function Hero({ onOpenChat }) {
               tabIndex={0}
             >
               <div className="bot-avatar-thumb">
-                <img src="/assets/chatbot-avatar.jpg" alt="Oyik AI Assistant" />
+                <img src="/favicon.png" alt="Oyik AI Assistant" />
                 <span className="bot-online-badge"></span>
               </div>
               <div className="bot-card-text">
-                <div className="bot-card-name">Oyik AI Concierge</div>
+                <div className="bot-card-name">Oyik AI Assistant</div>
                 <div className="bot-card-prompt">"Looking for Dr. Ananya or Cardiology?"</div>
               </div>
               <span className="bot-arrow-btn">
