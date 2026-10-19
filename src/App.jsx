@@ -9,7 +9,6 @@ import HowItWorks from './components/HowItWorks';
 import Testimonials from './components/Testimonials';
 import Footer from './components/Footer';
 import OyikChatbot from './components/OyikChatbot';
-import ChatLauncher from './components/ChatLauncher';
 
 const DEFAULT_WEBHOOK_URL =
   'https://oyik.cloud/webhook/754890e6-d157-481d-9fa1-32d8563e39e9/chat';
@@ -114,20 +113,15 @@ export default function App() {
         onOpenChat={handleOpenChat}
       />
 
-      {/* Embedded Chatbot Window */}
+      {/* Embedded Chatbot Window with Floating Action Bar */}
       <OyikChatbot
         isOpen={isChatOpen}
         onClose={handleCloseChat}
+        onOpen={handleOpenChat}
         initialPrompt={chatInitialPrompt}
         webhookUrl={webhookUrl}
         sessionId={sessionId}
         onResetSession={handleResetSession}
-      />
-
-      {/* Floating Bottom-Right Launcher */}
-      <ChatLauncher
-        isOpen={isChatOpen}
-        onToggle={handleToggleChat}
       />
     </div>
   );

@@ -1,848 +1,701 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Bot, X, Send, Sparkles, Calendar, Clock, User, Phone, CheckCircle2, 
-  Volume2, VolumeX, Maximize2, Minimize2, RotateCcw, AlertCircle, 
-  Download, ExternalLink, ChevronRight, ShieldCheck, Lock, CheckCheck
-} from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import './HdcChatbot.css';
 
-// Formatted message renderer with bold and clean line break support
-function FormattedMessageText({ text }) {
-  if (!text) return null;
-  const lines = text.split('\n');
+const DEFAULT_CONFIG = {
+  webhookUrl: 'https://oyik.cloud/webhook/754890e6-d157-481d-9fa1-32d8563e39e9/chat',
+  botName: 'Oyik Clinic Assistant',
+  subtitle: 'Usually replies in a few minutes',
+  introMessage: 'Hi there 👋 Welcome to Oyik Clinic! How can I help you today — booking an appointment, treatments, or healthcare consultation?',
+  inputPlaceholder: 'Type a message...',
+  poweredByText: 'Oyik.AI',
+  poweredByUrl: 'https://oyik.ai/',
+  logoUrl: '/favicon.png',
+  quickActions: [
+    'I need to book an appointment',
+    'I need to know about your services',
+    'I need to do rescheduling'
+  ],
+  sourceId: 'oyik-clinic-chatbot'
+};
 
-  return (
-    <div className="bubble-text">
-      {lines.map((line, lIdx) => {
-        if (!line.trim()) {
-          return <div key={lIdx} className="bubble-spacer" />;
-        }
+// Safe markdown renderer supporting bold (**text**), lists, paragraphs, and gold links
+function parseMarkdown(text) {
+  if (!text) return '';
 
-        // Render bold segments: **text**
-        const parts = line.split(/(\*\*.*?\*\*)/g);
-        return (
-          <p key={lIdx} className="bubble-line">
-            {parts.map((part, pIdx) => {
-              if (part.startsWith('**') && part.endsWith('**')) {
-                return <strong key={pIdx}>{part.slice(2, -2)}</strong>;
-              }
-              return part;
-            })}
-          </p>
-        );
-      })}
-    </div>
-  );
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function getSafeUrl(rawUrl) {
+    if (!rawUrl) return '';
+    let s = String(rawUrl).trim().replace(/^["']|["']$/g, '');
+    if (!s) return '';
+    if (s.startsWith('//')) s = 'https:' + s;
+    if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+    return s;
+  }
+
+  let cleaned = text
+    .replace(/\\\[/g, '[')
+    .replace(/\\\]/g, ']')
+    .replace(/\\\*/g, '*');
+
+  function renderInline(line) {
+    let rendered = escapeHtml(line);
+
+    // Bold: **text**
+    while (rendered.match(/\*\*(.+?)\*\*/)) {
+      rendered = rendered.replace(/\*\*(.+?)\*\*/, '<strong>$1</strong>');
+    }
+
+    // Markdown link: [label](url) or [label]: (url)
+    rendered = rendered.replace(
+      /\[([^\]]+)\]\s*(?:\(\s*([^\s)]+)\s*\)|:\s*\(?\s*([^\s)]+)\s*\)?)/gi,
+      (_m, _label, url1, url2) => {
+        const href = getSafeUrl(url1 || url2);
+        if (!href) return '';
+        return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Link ↗</a>`;
+      }
+    );
+
+    // Markdown link pattern: [label] - http://url
+    rendered = rendered.replace(
+      /\[([^\]]+)\]\s*[-:]*\s*(https?:\/\/[^\s<]+)/gi,
+      (_m, _label, url) => {
+        const href = getSafeUrl(url);
+        return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Link ↗</a>`;
+      }
+    );
+
+    // Raw URL: https://...
+    rendered = rendered.replace(
+      /(^|[^"'>])(https?:\/\/[^\s<]+)/gi,
+      (_m, prefix, url) => {
+        const href = getSafeUrl(url);
+        return `${prefix}<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Link ↗</a>`;
+      }
+    );
+
+    return rendered;
+  }
+
+  const lines = cleaned.split('\n');
+  let html = '';
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) {
+      if (inList) {
+        html += '</ul>';
+        inList = false;
+      }
+      continue;
+    }
+
+    const trimmed = line.trim();
+    if (trimmed.match(/^[-*] /)) {
+      if (!inList) {
+        html += '<ul style="margin:6px 0;padding-left:18px;">';
+        inList = true;
+      }
+      html += `<li style="margin:4px 0;">${renderInline(trimmed.replace(/^[-*] /, ''))}</li>`;
+    } else if (trimmed.match(/^\d+[.)] /)) {
+      if (!inList) {
+        html += '<ol style="margin:6px 0;padding-left:18px;">';
+        inList = true;
+      }
+      html += `<li style="margin:4px 0;">${renderInline(trimmed.replace(/^\d+[.)] /, ''))}</li>`;
+    } else {
+      if (inList) {
+        html += html.indexOf('<ol>') > html.lastIndexOf('</ol>') ? '</ol>' : '</ul>';
+        inList = false;
+      }
+      html += `<p style="margin:0 0 6px 0;">${renderInline(trimmed)}</p>`;
+    }
+  }
+
+  if (inList) {
+    html += html.indexOf('<ol>') > html.lastIndexOf('</ol>') ? '</ol>' : '</ul>';
+  }
+
+  return html;
 }
 
-export default function OyikChatbot({ 
-  isOpen, 
-  onClose, 
-  initialPrompt, 
-  webhookUrl, 
-  sessionId,
-  onResetSession
+// Helper to recursively parse webhook responses from n8n
+function parseWebhookResponse(raw) {
+  const texts = [];
+
+  function walk(obj) {
+    if (!obj) return;
+    if (typeof obj === 'string') {
+      const trimmed = obj.trim();
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          walk(JSON.parse(trimmed));
+          return;
+        } catch {
+          // ignore json parse error
+        }
+      }
+      if (trimmed) texts.push(trimmed);
+      return;
+    }
+    if (Array.isArray(obj)) {
+      for (let i = 0; i < obj.length; i++) walk(obj[i]);
+      return;
+    }
+    if (typeof obj === 'object') {
+      const textKeys = ['output', 'message', 'text', 'reply', 'response', 'content'];
+      for (let k = 0; k < textKeys.length; k++) {
+        if (obj[textKeys[k]]) walk(obj[textKeys[k]]);
+      }
+    }
+  }
+
+  walk(raw);
+  const unique = texts.filter((txt, idx) => txt && !texts.slice(0, idx).includes(txt));
+  const combined = unique.join('\n\n');
+  return combined
+    .replace(/Heritage\s*&\s*Castle\s*(Dental\s*Clinic|Dental\s*Care)?/gi, 'Oyik Clinic')
+    .replace(/Heritage\s*Dental(\s*Care)?/gi, 'Oyik Clinic');
+}
+
+export default function OyikChatbot({
+  isOpen,
+  onClose,
+  onOpen,
+  initialPrompt,
+  webhookUrl,
+  sessionId: parentSessionId
 }) {
+  const config = {
+    ...DEFAULT_CONFIG,
+    webhookUrl: webhookUrl || DEFAULT_CONFIG.webhookUrl
+  };
+
+  // State
   const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState('');
+  const [barInputVal, setBarInputVal] = useState('');
+  const [panelInputVal, setPanelInputVal] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [bookingState, setBookingState] = useState({
-    step: 'idle', // 'idle' | 'doctor' | 'date' | 'time' | 'details' | 'confirmed'
-    doctor: null,
-    date: null,
-    time: null,
-    name: '',
-    phone: '',
-    referenceId: null
+  const [isBarFocused, setIsBarFocused] = useState(false);
+  const [barPlaceholder, setBarPlaceholder] = useState('');
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('hdc-chat-sound') !== 'off';
+    } catch {
+      return true;
+    }
+  });
+
+  const [activeSessionId] = useState(() => {
+    if (parentSessionId) return parentSessionId;
+    return 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
   });
 
   const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
+  const panelInputRef = useRef(null);
+  const barInputRef = useRef(null);
+  const introShownRef = useRef(false);
+  const lastProcessedPromptRef = useRef(null);
 
-  // Web Audio synthetic chimes
-  const playChime = (type = 'receive') => {
+  // Audio Context synthesizer for pure browser chimes
+  const audioCtxRef = useRef(null);
+  const getAudioCtx = () => {
+    if (!audioCtxRef.current) {
+      try {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      } catch {
+        // audio context unsupported
+      }
+    }
+    return audioCtxRef.current;
+  };
+
+  const playTone = useCallback((freq, duration, type = 'sine', rampFreq = null) => {
     if (!soundEnabled) return;
     try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-
-      osc.type = 'sine';
-      if (type === 'receive') {
-        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12); // A5
-      } else {
-        osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
-        osc.frequency.exponentialRampToValueAtTime(554.37, audioCtx.currentTime + 0.1); // C#5
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
       }
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      if (rampFreq) {
+        osc.frequency.exponentialRampToValueAtTime(rampFreq, ctx.currentTime + duration);
+      }
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
 
       osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.25);
-    } catch (e) {
-      // Audio not supported or autoplay blocked
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration);
+    } catch {
+      // Audio autoplay restrictions
+    }
+  }, [soundEnabled]);
+
+  const playSend = useCallback(() => {
+    playTone(520, 0.12, 'sine', 780);
+  }, [playTone]);
+
+  const playReceive = useCallback(() => {
+    playTone(680, 0.15, 'sine', 520);
+  }, [playTone]);
+
+  const playOpen = useCallback(() => {
+    playTone(440, 0.1, 'sine', 660);
+  }, [playTone]);
+
+  const playClose = useCallback(() => {
+    playTone(520, 0.1, 'sine', 330);
+  }, [playTone]);
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    try {
+      localStorage.setItem('hdc-chat-sound', next ? 'on' : 'off');
+    } catch {
+      // storage unavailable
     }
   };
 
-  // Initialize welcome messages
-  useEffect(() => {
-    if (messages.length === 0) {
-      const welcomeMsg = {
-        id: 'welcome-1',
-        sender: 'bot',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: "Namaste & Welcome to Oyik Clinic! 🌿 I am your personal Appointment Concierge.\n\nI can help you check specialist availability, schedule an in-clinic or telehealth consultation, or answer questions regarding our heritage and modern clinical therapies.",
-        quickReplies: [
-          "📅 Book New Appointment",
-          "🌿 Heritage Ayurveda Consult",
-          "❤️ Cardiology with Dr. Julian",
-          "✨ Skin & Aesthetics Consult",
-          "📍 Clinic Hours & Location"
-        ]
-      };
-      setMessages([welcomeMsg]);
-    }
-  }, []);
+  // Helper: Current Time formatted
+  const timeNow = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Handle incoming initial prompt if passed from an external button click
-  const lastProcessedPromptRef = useRef(null);
-  useEffect(() => {
-    if (initialPrompt && isOpen && lastProcessedPromptRef.current !== initialPrompt) {
-      lastProcessedPromptRef.current = initialPrompt;
-      handleUserSend(initialPrompt);
+  // Add welcome intro message once
+  const ensureIntro = useCallback(() => {
+    if (!introShownRef.current) {
+      introShownRef.current = true;
+      setMessages(prev => [
+        ...prev,
+        {
+          id: 'intro_' + Date.now(),
+          who: 'bot',
+          text: config.introMessage,
+          time: timeNow()
+        }
+      ]);
     }
-  }, [initialPrompt, isOpen]);
+  }, [config.introMessage]);
 
-  // Scroll to bottom on new messages
+  // Scroll messages to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Focus input when opened
+  // Typewriter placeholder animation for the bottom bar input
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 300);
-    }
-  }, [isOpen]);
-
-  const doctorsList = [
-    {
-      id: "ananya",
-      name: "Dr. Ananya Sharma",
-      specialty: "Heritage & Integrative Medicine",
-      image: "/assets/doctor-heritage.jpg",
-      exp: "24 yrs clinical exp",
-      nextSlot: "Today 04:30 PM",
-      rating: "4.98 (340+ reviews)"
-    },
-    {
-      id: "julian",
-      name: "Dr. Julian Vance",
-      specialty: "Executive Cardiology",
-      image: "/assets/doctor-cardio.jpg",
-      exp: "16 yrs clinical exp",
-      nextSlot: "Today 03:15 PM",
-      rating: "4.96 (280+ reviews)"
-    },
-    {
-      id: "sarah",
-      name: "Dr. Sarah Jensen",
-      specialty: "Dermatology & Aesthetics",
-      image: "/assets/doctor-derma.jpg",
-      exp: "12 yrs clinical exp",
-      nextSlot: "Today 05:00 PM",
-      rating: "4.99 (410+ reviews)"
-    }
-  ];
-
-  const timeSlots = ["09:30 AM", "11:15 AM", "02:30 PM", "04:15 PM", "05:45 PM"];
-
-  // Send message
-  const handleUserSend = async (customText = null) => {
-    const textToSend = (customText || inputValue).trim();
-    if (!textToSend) return;
-
-    if (!customText) {
-      setInputValue('');
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      setBarPlaceholder(config.quickActions[0] || config.inputPlaceholder);
+      return;
     }
 
-    const userMessage = {
-      id: 'msg_' + Date.now(),
-      sender: 'user',
-      text: textToSend,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+    let phIndex = 0;
+    let phChar = 0;
+    let phDeleting = false;
+    let timerId = null;
 
-    setMessages(prev => [...prev, userMessage]);
-    playChime('send');
-    setIsTyping(true);
+    function tick() {
+      const phrases = config.quickActions;
+      if (!phrases || !phrases.length) return;
 
-    // If webhook is configured, call the appointment concierge workflow!
-    if (webhookUrl) {
-      try {
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            chatInput: textToSend,
-            sessionId: sessionId,
-            action: 'sendMessage',
-            metadata: {
-              source: 'oyik_clinic_react_frontend',
-              timestamp: new Date().toISOString()
-            }
-          })
-        });
-
-        if (response.ok) {
-          let botReplyText = '';
-          try {
-            const data = await response.json();
-            botReplyText = data.output || data.text || data.message || data.response || (typeof data === 'string' ? data : JSON.stringify(data));
-          } catch (e) {
-            botReplyText = await response.text();
-          }
-
-          const botMessage = {
-            id: 'bot_' + Date.now(),
-            sender: 'bot',
-            text: botReplyText || "Received your message at Oyik Clinic.",
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          };
-
-          setIsTyping(false);
-          setMessages(prev => [...prev, botMessage]);
-          playChime('receive');
-          return;
-        } else {
-          throw new Error(`HTTP ${response.status}`);
-        }
-      } catch (err) {
-        setIsTyping(false);
-        const errorMessage = {
-          id: 'bot_err_' + Date.now(),
-          sender: 'bot',
-          isError: true,
-          text: "Our appointment concierge is currently experiencing high demand. Please try again or reach our 24/7 reception desk at (800) 555-OYIK for immediate priority scheduling.",
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          quickReplies: ["📅 Book New Appointment", "🌿 Heritage Ayurveda Consult", "❤️ Cardiology with Dr. Julian"]
-        };
-        setMessages(prev => [...prev, errorMessage]);
-        playChime('receive');
+      if (isBarFocused || barInputVal || isOpen) {
+        timerId = setTimeout(tick, 400);
         return;
       }
+
+      const full = phrases[phIndex % phrases.length];
+      let delay = 55;
+
+      if (!phDeleting) {
+        phChar++;
+        delay = 55;
+        if (phChar >= full.length) {
+          phChar = full.length;
+          phDeleting = true;
+          delay = 1700;
+        }
+      } else {
+        phChar--;
+        delay = 26;
+        if (phChar <= 0) {
+          phChar = 0;
+          phDeleting = false;
+          phIndex = (phIndex + 1) % phrases.length;
+          delay = 400;
+        }
+      }
+
+      setBarPlaceholder(full.substring(0, phChar));
+      timerId = setTimeout(tick, delay);
     }
 
-    // Default: Built-in Interactive Clinic Assistant Flow
-    setTimeout(() => {
-      handleSimulatedBotResponse(textToSend);
+    tick();
+    return () => clearTimeout(timerId);
+  }, [config.quickActions, config.inputPlaceholder, isBarFocused, barInputVal, isOpen]);
+
+  // Send message to webhook and update UI
+  const handleSendMessage = useCallback(async (text) => {
+    const content = (text || panelInputVal).trim();
+    if (!content) return;
+
+    setPanelInputVal('');
+
+    // Append user message
+    const userMsg = {
+      id: 'u_' + Date.now(),
+      who: 'user',
+      text: content,
+      time: timeNow()
+    };
+    setMessages(prev => [...prev, userMsg]);
+    playSend();
+    setIsTyping(true);
+
+    try {
+      const res = await fetch(config.webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sendMessage',
+          chatInput: content,
+          message: content,
+          sessionId: activeSessionId,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            message: content,
+            timestamp: new Date().toISOString(),
+            source: config.sourceId
+          }
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Status ' + res.status);
+      }
+
+      const data = await res.json();
+      const reply = parseWebhookResponse(data) || "Thank you. Our clinic team has received your message.";
       setIsTyping(false);
-      playChime('receive');
-    }, 800);
-  };
-
-  const handleSimulatedBotResponse = (input) => {
-    const text = input.toLowerCase();
-
-    // Check for quick replies or intent
-    if (text.includes("book") || text.includes("appointment") || text.includes("schedule")) {
-      setBookingState(prev => ({ ...prev, step: 'doctor' }));
       setMessages(prev => [
         ...prev,
         {
-          id: 'bot_' + Date.now(),
-          sender: 'bot',
-          text: "Splendid! Let's schedule your consultation. Please select your preferred specialist from our clinic faculty:",
-          type: 'doctor-picker',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          id: 'b_' + Date.now(),
+          who: 'bot',
+          text: reply,
+          time: timeNow()
         }
       ]);
-    } else if (text.includes("ananya") || text.includes("heritage") || text.includes("ayurved")) {
-      handleSelectDoctor(doctorsList[0]);
-    } else if (text.includes("julian") || text.includes("cardio") || text.includes("heart")) {
-      handleSelectDoctor(doctorsList[1]);
-    } else if (text.includes("sarah") || text.includes("derma") || text.includes("skin")) {
-      handleSelectDoctor(doctorsList[2]);
-    } else if (text.includes("hour") || text.includes("time") || text.includes("location") || text.includes("address")) {
+      playReceive();
+      setTimeout(() => panelInputRef.current?.focus(), 80);
+    } catch {
+      setIsTyping(false);
       setMessages(prev => [
         ...prev,
         {
-          id: 'bot_' + Date.now(),
-          sender: 'bot',
-          text: "📍 **Oyik Clinic & Heritage Health Sanctuary**\n• **Address:** 14 Lotus Heritage Boulevard, Central Medical District\n• **Consultation Hours:** Monday – Saturday: 8:00 AM – 8:00 PM\n• **Sunday:** 9:00 AM – 2:00 PM (Emergency & Prior Priority Bookings)\n• **Amenities:** Valet parking, private consultation suites, and wheelchair accessible elevator.",
-          quickReplies: ["📅 Book Appointment Now", "👨‍⚕️ View Specialists"],
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          id: 'b_err_' + Date.now(),
+          who: 'bot',
+          text: "Sorry, I'm having trouble connecting right now. Please try again in a moment or reach out to our clinic desk.",
+          time: timeNow()
         }
       ]);
+      playReceive();
+      setTimeout(() => panelInputRef.current?.focus(), 80);
+    }
+  }, [panelInputVal, config.webhookUrl, config.sourceId, activeSessionId, playSend, playReceive]);
+
+  // Open the panel
+  const handleOpenPanel = useCallback((sendText = null) => {
+    if (typeof onOpen === 'function') {
+      onOpen();
+    }
+    playOpen();
+    ensureIntro();
+
+    if (sendText) {
+      setTimeout(() => {
+        handleSendMessage(sendText);
+      }, 250);
     } else {
-      setMessages(prev => [
-        ...prev,
-        {
-          id: 'bot_' + Date.now(),
-          sender: 'bot',
-          text: `Thank you for your inquiry regarding "${input}". At Oyik Clinic, we harmonize classical holistic medicine with modern diagnostic consultations. Would you like to schedule an appointment with our specialist?`,
-          quickReplies: [
-            "📅 Yes, Book Appointment",
-            "🌿 Consult Dr. Ananya",
-            "❤️ Consult Dr. Julian",
-            "📍 Clinic Timings"
-          ],
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
+      setTimeout(() => {
+        panelInputRef.current?.focus();
+      }, 200);
     }
-  };
+  }, [onOpen, playOpen, ensureIntro, handleSendMessage]);
 
-  const handleSelectDoctor = (doctor) => {
-    setBookingState(prev => ({ ...prev, doctor, step: 'date' }));
-    setMessages(prev => [
-      ...prev,
-      {
-        id: 'bot_' + Date.now(),
-        sender: 'bot',
-        text: `You have selected **${doctor.name}** (${doctor.specialty}). When would you like to schedule your visit?`,
-        type: 'date-picker',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
-  };
-
-  const handleSelectDate = (dateStr) => {
-    setBookingState(prev => ({ ...prev, date: dateStr, step: 'time' }));
-    setMessages(prev => [
-      ...prev,
-      {
-        id: 'bot_' + Date.now(),
-        sender: 'bot',
-        text: `Selected date: **${dateStr}**. Please choose your preferred consultation time slot:`,
-        type: 'time-picker',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
-  };
-
-  const handleSelectTime = (timeStr) => {
-    setBookingState(prev => ({ ...prev, time: timeStr, step: 'details' }));
-    setMessages(prev => [
-      ...prev,
-      {
-        id: 'bot_' + Date.now(),
-        sender: 'bot',
-        text: `Slot confirmed for **${timeStr}**. Please provide the patient's contact details to generate your verified digital appointment pass:`,
-        type: 'patient-details-form',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
-  };
-
-  const handleConfirmBooking = (patientDetails) => {
-    const refCode = 'OYIK-' + Math.floor(1000 + Math.random() * 9000);
-    const updatedState = {
-      ...bookingState,
-      name: patientDetails.name,
-      phone: patientDetails.phone,
-      referenceId: refCode,
-      step: 'confirmed'
-    };
-    setBookingState(updatedState);
-
-    setMessages(prev => [
-      ...prev,
-      {
-        id: 'bot_' + Date.now(),
-        sender: 'bot',
-        text: `🎉 **Appointment Confirmed!**\n\nYour appointment reference is **#${refCode}**. A verified WhatsApp & SMS confirmation pass has been dispatched to ${patientDetails.phone}.`,
-        type: 'confirmation-card',
-        bookingData: updatedState,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
-    playChime('receive');
-  };
-
-  const handleDownloadSlip = (data) => {
-    const slipText = `=================================================
-             OYIK CLINIC • HERITAGE SANCTUARY
-            OFFICIAL APPOINTMENT PASS & RECEIPT
-=================================================
-Booking Reference : ${data.referenceId || 'OYIK-2026-CONFIRMED'}
-Date & Time       : ${data.date || 'Today'}, ${data.time || '11:15 AM'}
-Consulting Doctor : ${data.doctor?.name || 'Dr. Ananya Sharma'}
-Department        : ${data.doctor?.specialty || 'Heritage Medicine'}
-Patient Name      : ${data.name || 'Valued Patient'}
-Contact Number    : ${data.phone || '+1 (800) 555-OYIK'}
-
-Sanctuary Location:
-Oyik Clinic Heritage Sanctuary, 14 Lotus Blvd, Medical District
-Phone: +1 (800) 555-OYIK | Email: concierge@oyikclinic.com
-
-Instructions:
-1. Please arrive 10 minutes prior to your designated slot.
-2. Present this digital pass or your booking reference at reception.
-3. Complimentary herbal infusions served in our heritage lounge.
-=================================================`;
-
-    const blob = new Blob([slipText], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Oyik_Appointment_Pass_${data.referenceId || 'Confirmed'}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleResetChat = () => {
-    if (typeof onResetSession === 'function') {
-      onResetSession();
+  // Close the panel
+  const handleClosePanel = useCallback(() => {
+    if (typeof onClose === 'function') {
+      onClose();
     }
-    const welcomeMsg = {
-      id: 'welcome_' + Date.now(),
-      sender: 'bot',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: "Namaste & Welcome to Oyik Clinic! 🌿 I am your personal Appointment Concierge.\n\nHow may I assist your health and wellness journey today?",
-      quickReplies: [
-        "📅 Book New Appointment",
-        "🌿 Heritage Ayurveda Consult",
-        "❤️ Cardiology with Dr. Julian",
-        "✨ Skin & Aesthetics Consult"
-      ]
-    };
-    setMessages([welcomeMsg]);
-    setBookingState({
-      step: 'idle',
-      doctor: null,
-      date: null,
-      time: null,
-      name: '',
-      phone: '',
-      referenceId: null
-    });
+    playClose();
+  }, [onClose, playClose]);
+
+  // Submit from the bottom floating capsule bar
+  const handleBarSubmit = (customText = null) => {
+    const val = (customText || barInputVal).trim();
+    if (!val) return;
+    setBarInputVal('');
+    setIsBarFocused(false);
+    barInputRef.current?.blur();
+    handleOpenPanel(val);
   };
+
+  // External trigger (e.g. from Hero, Doctors, Spotlight buttons)
+  useEffect(() => {
+    if (isOpen) {
+      ensureIntro();
+      setTimeout(() => panelInputRef.current?.focus(), 250);
+    }
+  }, [isOpen, ensureIntro]);
+
+  useEffect(() => {
+    if (initialPrompt && isOpen && lastProcessedPromptRef.current !== initialPrompt) {
+      lastProcessedPromptRef.current = initialPrompt;
+      handleSendMessage(initialPrompt);
+    }
+  }, [initialPrompt, isOpen, handleSendMessage]);
+
+  // Global keydown: Escape to close modal
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!isOpen) return;
+      if (e.key === 'Escape') {
+        handleClosePanel();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, handleClosePanel]);
+
+  const isBarExpanded = isBarFocused || Boolean(barInputVal.trim());
 
   return (
-    <div 
-      className={`chatbot-window-container ${isExpanded ? 'expanded' : ''}`}
-      style={{ display: isOpen ? 'flex' : 'none' }}
-    >
-      {/* Chat Window Header */}
-      <div className="chat-header">
-        <div className="chat-header-info">
-          <div className="header-avatar-wrap">
+    <div id="hdc-chatbot-widget">
+      {/* =========================================================================
+          1. Flyout Chat Panel Modal
+          ========================================================================= */}
+      <div 
+        className={`hdc-chat-panel ${isOpen ? 'open' : ''}`} 
+        id="hdcChatPanel"
+        role="dialog"
+        aria-label="Clinic Assistant Chat"
+      >
+        {/* Header */}
+        <div className="hdc-chat-header">
+          <div className="hdc-chat-avatar">
             <img 
-              src="/assets/chatbot-avatar.jpg" 
-              alt="Oyik Clinic Chatbot" 
-              className="header-avatar-img" 
+              src={config.logoUrl} 
+              alt="Clinic Logo" 
             />
-            <span className="avatar-status-badge"></span>
           </div>
 
-          <div className="header-text-block">
-            <div className="header-title-row">
-              <h4>Oyik Medical Concierge</h4>
-              <span className="header-verified-icon" title="Verified Medical Practice">
-                <ShieldCheck size={14} className="text-gold" />
-              </span>
-              <span className="header-online-pill">
-                <span className="online-indicator-dot"></span>
-                <span>Active</span>
-              </span>
+          <div className="hdc-chat-header-text">
+            <div className="name">
+              {config.botName} <span className="hdc-status-dot"></span>
             </div>
-            <p className="header-subtitle">Heritage Sanctuary • Live Scheduling</p>
+            <div className="sub">{config.subtitle}</div>
+          </div>
+
+          <div className="hdc-header-btns">
+            {/* Sound Toggle */}
+            <button
+              type="button"
+              className="hdc-header-sound-btn"
+              onClick={toggleSound}
+              aria-label={soundEnabled ? 'Mute sounds' : 'Unmute sounds'}
+              title={soundEnabled ? 'Mute sounds' : 'Unmute sounds'}
+            >
+              {soundEnabled ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <line x1="23" y1="9" x2="17" y2="15"></line>
+                  <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+              )}
+            </button>
+
+            {/* Close Button */}
+            <button
+              type="button"
+              className="hdc-header-close"
+              onClick={handleClosePanel}
+              aria-label="Close chat"
+              title="Close chat"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
         </div>
 
-        {/* Header Action Icons */}
-        <div className="chat-header-actions">
-          <button 
-            type="button" 
-            className="header-icon-btn" 
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            title={soundEnabled ? "Mute audio chimes" : "Enable audio chimes"}
-            aria-label="Toggle sound"
-          >
-            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
+        {/* Message Stream */}
+        <div className="hdc-chat-messages" id="hdcChatMessages">
+          {messages.map((m) => (
+            <div key={m.id} className={`hdc-msg-row ${m.who}`}>
+              <div 
+                className="hdc-bubble"
+                dangerouslySetInnerHTML={{ 
+                  __html: m.who === 'bot' ? parseMarkdown(m.text) : m.text 
+                }}
+              />
+              <div className="hdc-msg-meta">
+                {m.who === 'bot' ? `${config.botName.split(' ')[0]} · ${m.time}` : `You · ${m.time}`}
+              </div>
+            </div>
+          ))}
 
-          <button 
-            type="button" 
-            className="header-icon-btn" 
-            onClick={handleResetChat}
-            title="Start fresh consultation"
-            aria-label="Reset consultation"
-          >
-            <RotateCcw size={16} />
-          </button>
+          {/* Typing Indicator */}
+          {isTyping && (
+            <div className="hdc-msg-row bot" id="hdcTypingRow">
+              <div className="hdc-bubble hdc-typing">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          )}
 
-          <button 
-            type="button" 
-            className="header-icon-btn" 
-            onClick={() => setIsExpanded(!isExpanded)}
-            title={isExpanded ? "Collapse view" : "Expand window"}
-            aria-label="Toggle expansion"
-          >
-            {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </button>
+          <div ref={messagesEndRef} />
+        </div>
 
-          <button 
-            type="button" 
-            className="header-icon-btn close-btn" 
-            onClick={onClose}
-            title="Close concierge"
-            aria-label="Close chatbot"
-          >
-            <X size={18} />
-          </button>
+        {/* Input Area */}
+        <div className="hdc-chat-input-area">
+          <div className="hdc-chat-input-wrap">
+            <input
+              ref={panelInputRef}
+              type="text"
+              id="hdcChatInput"
+              placeholder={config.inputPlaceholder}
+              value={panelInputVal}
+              onChange={(e) => setPanelInputVal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              autoComplete="off"
+            />
+            <button
+              type="button"
+              className="hdc-send-btn"
+              onClick={() => handleSendMessage()}
+              aria-label="Send message"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <div className="hdc-powered-by">
+            Powered by{' '}
+            <a href={config.poweredByUrl} target="_blank" rel="noopener noreferrer">
+              {config.poweredByText}
+            </a>
+          </div>
         </div>
       </div>
 
-      {/* Chat Messages Body */}
-      <div className="chat-messages-body">
-        {/* Confidential Session Security Banner */}
-        <div className="chat-session-badge">
-          <Lock size={11} className="text-gold" />
-          <span>Encrypted Healthcare Session • HIPAA Confidential</span>
+      {/* =========================================================================
+          2. Floating Bottom Pill Bar & Quick Action Chips
+          ========================================================================= */}
+      <div 
+        className={`hdc-bar-wrap ${isOpen ? 'hdc-bar-hidden' : ''} ${isBarExpanded ? 'expanded' : ''}`}
+        id="hdcBarWrap"
+      >
+        {/* Quick Action Chips that stagger animate up on hover/focus */}
+        <div className="hdc-pills" id="hdcPills">
+          {config.quickActions.map((action, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className="hdc-pill"
+              onClick={() => handleBarSubmit(action)}
+              data-msg={action}
+            >
+              {action}
+            </button>
+          ))}
         </div>
 
-        {messages.map((msg) => (
-          <div 
-            key={msg.id} 
-            className={`chat-bubble-row ${msg.sender === 'user' ? 'user-row' : 'bot-row'}`}
-          >
-            {msg.sender === 'bot' && (
-              <div className="bot-bubble-avatar">
-                <img src="/assets/chatbot-avatar.jpg" alt="Oyik AI" />
-              </div>
-            )}
-
-            <div className={`chat-bubble ${msg.sender === 'user' ? 'user-bubble' : 'bot-bubble'} ${msg.isError ? 'error-bubble' : ''}`}>
-              <FormattedMessageText text={msg.text} />
-
-              {/* Doctor Picker Component */}
-              {msg.type === 'doctor-picker' && (
-                <div className="interactive-doctors-list">
-                  {doctorsList.map((doc) => (
-                    <div 
-                      key={doc.id} 
-                      className="picker-doc-card"
-                      onClick={() => handleSelectDoctor(doc)}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <div className="picker-doc-avatar-wrap">
-                        <img src={doc.image} alt={doc.name} className="picker-doc-thumb" />
-                        <span className="picker-doc-online-dot"></span>
-                      </div>
-                      <div className="picker-doc-info">
-                        <div className="picker-doc-name-row">
-                          <strong>{doc.name}</strong>
-                          <span className="picker-doc-exp">{doc.exp}</span>
-                        </div>
-                        <span className="picker-doc-spec">{doc.specialty}</span>
-                        <div className="picker-slot-chip">
-                          <Clock size={11} />
-                          <span>Earliest Slot: {doc.nextSlot}</span>
-                        </div>
-                      </div>
-                      <div className="picker-select-btn">
-                        <span>Select</span>
-                        <ChevronRight size={14} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Date Picker Component */}
-              {msg.type === 'date-picker' && (
-                <div className="interactive-date-chips">
-                  <button 
-                    type="button" 
-                    className="date-chip priority-chip" 
-                    onClick={() => handleSelectDate("Today (Immediate Priority)")}
-                  >
-                    <div className="chip-icon-box"><Calendar size={13} /></div>
-                    <div className="chip-text-wrap">
-                      <span className="chip-primary-text">Today</span>
-                      <span className="chip-sub-text">Immediate Slot</span>
-                    </div>
-                  </button>
-                  <button 
-                    type="button" 
-                    className="date-chip" 
-                    onClick={() => handleSelectDate("Tomorrow Morning")}
-                  >
-                    <div className="chip-icon-box"><Calendar size={13} /></div>
-                    <div className="chip-text-wrap">
-                      <span className="chip-primary-text">Tomorrow</span>
-                      <span className="chip-sub-text">Morning / Afternoon</span>
-                    </div>
-                  </button>
-                  <button 
-                    type="button" 
-                    className="date-chip" 
-                    onClick={() => handleSelectDate("This Saturday (Weekend Clinic)")}
-                  >
-                    <div className="chip-icon-box"><Calendar size={13} /></div>
-                    <div className="chip-text-wrap">
-                      <span className="chip-primary-text">This Saturday</span>
-                      <span className="chip-sub-text">Weekend Clinic</span>
-                    </div>
-                  </button>
-                </div>
-              )}
-
-              {/* Time Picker Component */}
-              {msg.type === 'time-picker' && (
-                <div className="interactive-time-chips">
-                  {timeSlots.map((slot, sIdx) => (
-                    <button 
-                      key={sIdx} 
-                      type="button" 
-                      className="time-chip"
-                      onClick={() => handleSelectTime(slot)}
-                    >
-                      <Clock size={12} className="time-chip-icon" />
-                      <span>{slot}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Patient Details Form Component */}
-              {msg.type === 'patient-details-form' && (
-                <PatientForm onSubmit={handleConfirmBooking} />
-              )}
-
-              {/* Confirmation Card Component */}
-              {msg.type === 'confirmation-card' && msg.bookingData && (
-                <div className="appointment-ticket-card">
-                  <div className="ticket-top-banner">
-                    <div className="ticket-emblem-wrap">
-                      <img src="/assets/logo.png" alt="Oyik Logo" className="ticket-logo-img" />
-                      <div>
-                        <div className="ticket-clinic-name">OYIK CLINIC • SANCTUARY</div>
-                        <div className="ticket-sub">OFFICIAL APPOINTMENT PASS</div>
-                      </div>
-                    </div>
-                    <div className="ticket-verified-pill">
-                      <CheckCircle2 size={12} />
-                      <span>CONFIRMED</span>
-                    </div>
-                  </div>
-
-                  <div className="ticket-ref-bar">
-                    <span className="ref-title">BOOKING REFERENCE</span>
-                    <strong className="ref-code">#{msg.bookingData.referenceId}</strong>
-                  </div>
-
-                  <div className="ticket-details-grid">
-                    <div className="ticket-grid-item">
-                      <span className="item-label">Consulting Specialist</span>
-                      <strong className="item-value highlight">{msg.bookingData.doctor?.name || 'Dr. Ananya Sharma'}</strong>
-                      <span className="item-sub">{msg.bookingData.doctor?.specialty || 'Heritage Medicine'}</span>
-                    </div>
-
-                    <div className="ticket-grid-item">
-                      <span className="item-label">Scheduled Time</span>
-                      <strong className="item-value text-gold">{msg.bookingData.date}</strong>
-                      <span className="item-sub text-gold-light">{msg.bookingData.time}</span>
-                    </div>
-
-                    <div className="ticket-grid-item">
-                      <span className="item-label">Patient Name</span>
-                      <strong className="item-value">{msg.bookingData.name}</strong>
-                      <span className="item-sub">{msg.bookingData.phone}</span>
-                    </div>
-
-                    <div className="ticket-grid-item">
-                      <span className="item-label">Consultation Venue</span>
-                      <strong className="item-value">Oyik Heritage Sanctuary</strong>
-                      <span className="item-sub">14 Lotus Blvd • Suite 4B</span>
-                    </div>
-                  </div>
-
-                  <div className="ticket-actions">
-                    <button 
-                      type="button" 
-                      className="ticket-btn btn-slip"
-                      onClick={() => handleDownloadSlip(msg.bookingData)}
-                    >
-                      <Download size={15} />
-                      <span>Download Digital Pass</span>
-                    </button>
-
-                    <a 
-                      href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Appointment with ${msg.bookingData.doctor?.name || 'Oyik Clinic'}`)}&details=${encodeURIComponent(`Oyik Clinic Appointment Ref: ${msg.bookingData.referenceId}. Specialist: ${msg.bookingData.doctor?.name}`)}&location=${encodeURIComponent('Oyik Clinic Heritage Sanctuary, 14 Lotus Blvd')}`}
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="ticket-btn btn-cal"
-                    >
-                      <Calendar size={15} />
-                      <span>Add to Calendar</span>
-                    </a>
-                  </div>
-
-                  <div className="ticket-barcode-footer">
-                    <span className="barcode-mock">||| | |||| | |||||| || | |||| ||| |||| |</span>
-                    <span className="barcode-label">Present this pass at clinic reception for priority check-in</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Quick Reply Chips */}
-              {msg.quickReplies && (
-                <div className="bubble-quick-replies">
-                  {msg.quickReplies.map((reply, rIdx) => (
-                    <button
-                      key={rIdx}
-                      type="button"
-                      className="quick-reply-btn"
-                      onClick={() => handleUserSend(reply)}
-                    >
-                      <span>{reply}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="bubble-footer-row">
-                <span className="bubble-timestamp">{msg.timestamp}</span>
-                {msg.sender === 'user' && (
-                  <CheckCheck size={12} className="msg-delivered-icon" />
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Typing indicator */}
-        {isTyping && (
-          <div className="chat-bubble-row bot-row animate-fade-in">
-            <div className="bot-bubble-avatar">
-              <img src="/assets/chatbot-avatar.jpg" alt="Oyik AI" />
-            </div>
-            <div className="chat-bubble bot-bubble typing-bubble">
-              <span className="typing-label">Oyik Concierge is typing</span>
-              <div className="typing-dots-wrap">
-                <span className="typing-dot"></span>
-                <span className="typing-dot"></span>
-                <span className="typing-dot"></span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Chat Input Bar */}
-      <div className="chat-input-wrapper">
-        <form 
-          className="chat-input-area"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleUserSend();
-          }}
+        {/* Capsule Input Bar */}
+        <div 
+          className="hdc-bar" 
+          id="hdcBar"
+          onClick={() => barInputRef.current?.focus()}
         >
           <input
-            ref={inputRef}
+            ref={barInputRef}
             type="text"
-            className="chat-text-input"
-            placeholder="Type your health inquiry or appointment need..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            className="hdc-bar-input"
+            id="hdcBarInput"
+            placeholder={isBarFocused ? config.inputPlaceholder : barPlaceholder}
+            value={barInputVal}
+            onChange={(e) => setBarInputVal(e.target.value)}
+            onFocus={() => setIsBarFocused(true)}
+            onBlur={() => {
+              if (!barInputVal.trim()) {
+                setIsBarFocused(false);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleBarSubmit();
+              } else if (e.key === 'Escape') {
+                setIsBarFocused(false);
+                barInputRef.current?.blur();
+              }
+            }}
+            autoComplete="off"
+            aria-label="Message"
           />
-          <button 
-            type="submit" 
-            className="chat-send-btn"
-            disabled={!inputValue.trim()}
+
+          <button
+            type="button"
+            className="hdc-bar-send"
+            id="hdcBarSend"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (barInputVal.trim()) {
+                handleBarSubmit();
+              } else {
+                handleOpenPanel();
+              }
+            }}
             aria-label="Send message"
           >
-            <Send size={17} />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5"></line>
+              <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
           </button>
-        </form>
-        <div className="chat-security-footer">
-          <Lock size={10} />
-          <span>Official Oyik Clinic Concierge • 256-bit Encrypted Consultation</span>
         </div>
       </div>
     </div>
-  );
-}
-
-// Patient details sub-form inside chat
-function PatientForm({ onSubmit }) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
-    onSubmit({ name: name.trim(), phone: phone.trim() });
-  };
-
-  return (
-    <form className="chat-patient-form" onSubmit={handleSubmit}>
-      <div className="form-card-header">
-        <div className="form-header-title">
-          <User size={15} className="text-gold" />
-          <span>Patient Intake & Pass Details</span>
-        </div>
-        <span className="form-secure-tag">
-          <Lock size={10} /> Confidential
-        </span>
-      </div>
-
-      <div className="form-inner-group">
-        <label>
-          <span>Patient Full Legal Name</span>
-        </label>
-        <div className="input-with-icon">
-          <User size={15} className="input-icon" />
-          <input 
-            type="text" 
-            required 
-            placeholder="e.g. Eleanor Vance" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-          />
-        </div>
-      </div>
-
-      <div className="form-inner-group">
-        <label>
-          <span>Mobile / WhatsApp Number (for SMS Pass)</span>
-        </label>
-        <div className="input-with-icon">
-          <Phone size={15} className="input-icon" />
-          <input 
-            type="tel" 
-            required 
-            placeholder="e.g. +1 (555) 019-2834" 
-            value={phone} 
-            onChange={(e) => setPhone(e.target.value)} 
-          />
-        </div>
-      </div>
-
-      <button type="submit" className="btn btn-gold btn-sm btn-full form-submit-btn">
-        <CheckCircle2 size={16} />
-        <span>Generate Verified Appointment Pass</span>
-      </button>
-
-      <div className="form-footer-privacy">
-        <ShieldCheck size={12} />
-        <span>Your information is protected under strict clinical privacy protocols.</span>
-      </div>
-    </form>
   );
 }
