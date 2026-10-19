@@ -1,27 +1,27 @@
 #hdc-chatbot-widget {
-  --hdc-chat-glass-bg: rgba(18, 18, 20, 0.75);
-  --hdc-chat-glass-blur: blur(20px);
-  --hdc-container-border: rgba(255, 255, 255, 0.12);
-  --hdc-header-bg: rgba(255, 255, 255, 0.03);
-  --hdc-header-border: rgba(255, 255, 255, 0.08);
+  --hdc-chat-glass-bg: #111a17;
+  --hdc-chat-glass-blur: none;
+  --hdc-container-border: rgba(223, 183, 118, 0.3);
+  --hdc-header-bg: #0c1412;
+  --hdc-header-border: rgba(223, 183, 118, 0.2);
   --hdc-header-text: #FFFFFF;
-  --hdc-subtitle-text: rgba(255, 255, 255, 0.5);
+  --hdc-subtitle-text: #a8b8b3;
   --hdc-avatar-bg: #123830;
   --hdc-avatar-text: #111111;
-  --hdc-bot-bubble-bg: rgba(255, 255, 255, 0.07);
-  --hdc-bot-bubble-text: #F3F4F6;
-  --hdc-bot-bubble-border: rgba(255, 255, 255, 0.06);
+  --hdc-bot-bubble-bg: #1c2a26;
+  --hdc-bot-bubble-text: #FFFFFF;
+  --hdc-bot-bubble-border: rgba(223, 183, 118, 0.25);
   --hdc-user-bubble-bg: #FFFFFF;
   --hdc-user-bubble-text: #0D0E11;
-  --hdc-input-area-bg: rgba(18, 18, 20, 0.4);
-  --hdc-input-box-bg: rgba(255, 255, 255, 0.05);
-  --hdc-input-box-border: rgba(255, 255, 255, 0.12);
-  --hdc-send-btn-bg: #FFFFFF;
-  --hdc-send-btn-color: #000000;
-  --hdc-quick-action-hover-bg: #FFFFFF;
-  --hdc-quick-action-hover-text: #0D0E11;
+  --hdc-input-area-bg: #0c1412;
+  --hdc-input-box-bg: #162420;
+  --hdc-input-box-border: rgba(223, 183, 118, 0.28);
+  --hdc-send-btn-bg: #dfb776;
+  --hdc-send-btn-color: #091714;
+  --hdc-quick-action-hover-bg: #dfb776;
+  --hdc-quick-action-hover-text: #091714;
   --hdc-radius: 24px;
-  --hdc-shadow: 0 25px 65px rgba(0, 0, 0, 0.55);
+  --hdc-shadow: 0 24px 70px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(223, 183, 118, 0.25);
 }
 
 .hdc-bar-wrap, .hdc-chat-panel {
@@ -77,11 +77,9 @@
 }
 
 .hdc-pill {
-  background: var(--hdc-chat-glass-bg) !important;
-  backdrop-filter: var(--hdc-chat-glass-blur) !important;
-  -webkit-backdrop-filter: var(--hdc-chat-glass-blur) !important;
+  background: #111a17 !important;
   color: #FFFFFF !important;
-  border: 1px solid var(--hdc-container-border) !important;
+  border: 1px solid rgba(223, 183, 118, 0.35) !important;
   font-size: 13.5px !important;
   font-weight: 500 !important;
   padding: 10px 16px !important;
@@ -91,7 +89,7 @@
   max-width: 100% !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
   margin: 0 !important;
   outline: none !important;
   min-height: 0 !important;
@@ -128,7 +126,7 @@
 .hdc-bar-wrap:hover .hdc-pill:hover {
   background: var(--hdc-quick-action-hover-bg) !important;
   color: var(--hdc-quick-action-hover-text) !important;
-  border-color: #FFFFFF !important;
+  border-color: #dfb776 !important;
   transform: translateY(-3px) !important;
   transition-delay: 0s !important;
 }
@@ -140,14 +138,12 @@
   gap: 8px !important;
   width: min(340px, 100%) !important;
   max-width: 100% !important;
-  background: var(--hdc-chat-glass-bg) !important;
-  backdrop-filter: var(--hdc-chat-glass-blur) !important;
-  -webkit-backdrop-filter: var(--hdc-chat-glass-blur) !important;
-  border: 1px solid var(--hdc-container-border) !important;
+  background: #111a17 !important;
+  border: 1px solid rgba(223, 183, 118, 0.35) !important;
   border-radius: 999px !important;
   padding: 6px 6px 6px 20px !important;
   margin: 0 !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.55) !important;
   cursor: text !important;
   pointer-events: auto !important;
   transition: width .38s cubic-bezier(.2,.8,.2,1), border-color .15s ease, box-shadow .2s ease !important;
@@ -156,8 +152,8 @@
 .hdc-bar-wrap.expanded .hdc-bar,
 .hdc-bar-wrap:hover .hdc-bar {
   width: 100% !important;
-  border-color: rgba(255, 255, 255, 0.35) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+  border-color: rgba(223, 183, 118, 0.6) !important;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.65) !important;
 }
 
 .hdc-bar-input {
@@ -214,12 +210,10 @@
   max-width: calc(100vw - 32px) !important;
   height: 680px !important;
   max-height: calc(100vh - 56px) !important;
-  background: var(--hdc-chat-glass-bg) !important;
-  backdrop-filter: var(--hdc-chat-glass-blur) !important;
-  -webkit-backdrop-filter: var(--hdc-chat-glass-blur) !important;
-  border: 1px solid var(--hdc-container-border) !important;
+  background: #111a17 !important;
+  border: 1px solid rgba(223, 183, 118, 0.3) !important;
   border-radius: var(--hdc-radius) !important;
-  box-shadow: var(--hdc-shadow) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(223, 183, 118, 0.25) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
@@ -347,6 +341,7 @@
   display: flex !important;
   flex-direction: column !important;
   gap: 14px !important;
+  background: #111a17 !important;
 }
 
 .hdc-chat-messages::-webkit-scrollbar {
@@ -380,10 +375,10 @@
 }
 
 .hdc-bubble {
-  padding: 11px 14px !important;
+  padding: 12px 16px !important;
   border-radius: 16px !important;
   font-size: 14px !important;
-  line-height: 1.48 !important;
+  line-height: 1.5 !important;
   white-space: pre-wrap !important;
   word-break: break-word !important;
   overflow-wrap: break-word !important;
@@ -430,6 +425,7 @@
   color: #FFFFFF !important;
   border: 1px solid var(--hdc-bot-bubble-border) !important;
   border-bottom-left-radius: 4px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
 }
 
 .hdc-msg-row.bot .hdc-bubble p,
@@ -494,20 +490,22 @@
 }
 
 .hdc-chat-quick-btn {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: #1c2a26 !important;
+  border: 1px solid rgba(223, 183, 118, 0.3) !important;
   color: #FFFFFF !important;
   font-size: 12.5px !important;
-  padding: 6px 12px !important;
+  font-weight: 500 !important;
+  padding: 7px 14px !important;
   border-radius: 999px !important;
   cursor: pointer !important;
   transition: all .15s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
 }
 
 .hdc-chat-quick-btn:hover {
-  background: #FFFFFF !important;
-  color: #000000 !important;
-  border-color: #FFFFFF !important;
+  background: #dfb776 !important;
+  color: #091714 !important;
+  border-color: #dfb776 !important;
 }
 
 /* Input Area */
