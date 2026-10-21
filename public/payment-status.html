@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Status · Oyik Clinic</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #faf8f5;
+      --bg-card: #ffffff;
+      --primary: #123830;
+      --gold:    #c59d5f;
+      --text:    #132420;
+      --muted:   #4d635c;
+      --success: #10b981;
+      --cancel:  #dc2626;
+      --border:  #e8e2d4;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:      #0e1a17;
+        --bg-card: #152820;
+        --text:    #e8dfd0;
+        --muted:   #8aaa9e;
+        --border:  rgba(223,183,118,0.18);
+      }
+    }
+    html, body {
+      height: 100%;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px -10px rgba(18,56,48,0.14);
+      padding: 48px 40px 40px;
+      max-width: 420px;
+      width: calc(100% - 32px);
+      text-align: center;
+    }
+    .icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 32px;
+    }
+    .icon.success { background: rgba(16,185,129,0.12); color: var(--success); }
+    .icon.cancel  { background: rgba(220,38,38,0.10);  color: var(--cancel);  }
+    .brand {
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem; font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px; line-height: 1.3;
+    }
+    p {
+      font-size: 0.97rem; color: var(--muted);
+      line-height: 1.6; margin-bottom: 28px;
+    }
+    .timer {
+      display: inline-block;
+      font-size: 0.82rem; color: var(--gold); font-weight: 600;
+      margin-bottom: 24px;
+      background: rgba(197,157,95,0.1);
+      border: 1px solid rgba(197,157,95,0.3);
+      border-radius: 99px; padding: 5px 16px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 28px; border-radius: 99px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; border: none; text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(135deg,#123830,#1b4d42); color:#fff; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">Oyik Clinic</div>
+    <div class="icon" id="statusIcon"></div>
+    <h1 id="statusTitle"></h1>
+    <p id="statusMessage"></p>
+    <div class="timer" id="timerBadge"></div>
+    <div>
+      <button class="btn btn-primary" id="backBtn">Back to chat</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var params  = new URLSearchParams(window.location.search);
+      var status  = params.get('status');
+      var success = status === 'success';
+
+      var icon    = document.getElementById('statusIcon');
+      var title   = document.getElementById('statusTitle');
+      var msg     = document.getElementById('statusMessage');
+      var timer   = document.getElementById('timerBadge');
+      var backBtn = document.getElementById('backBtn');
+
+      if (success) {
+        icon.className   = 'icon success';
+        icon.textContent = '\u2713';
+        title.textContent = 'Payment Received!';
+        msg.textContent  = 'Your payment was successful. Your appointment is being confirmed \u2014 you\'ll receive details shortly.';
+      } else {
+        icon.className   = 'icon cancel';
+        icon.textContent = '\u2715';
+        title.textContent = 'Payment Cancelled';
+        msg.textContent  = 'Your payment was cancelled. No money has been taken. You can try again any time.';
+      }
+
+      var countdown = 3;
+      function updateTimer() { timer.textContent = 'Closing in ' + countdown + 's\u2026'; }
+      updateTimer();
+
+      function notifyAndClose() {
+        if (window.opener && !window.opener.closed) {
+          try {
+            window.opener.postMessage(
+              { type: 'oyik-payment-result', success: success },
+              window.location.origin
+            );
+          } catch(e) {}
+        }
+        setTimeout(function() { window.close(); }, 300);
+      }
+
+      var interval = setInterval(function () {
+        countdown--;
+        updateTimer();
+        if (countdown <= 0) {
+          clearInterval(interval);
+          notifyAndClose();
+        }
+      }, 1000);
+
+      backBtn.addEventListener('click', function () {
+        clearInterval(interval);
+        notifyAndClose();
+        setTimeout(function() { window.location.href = '/'; }, 500);
+      });
+    })();
+  </script>
+</body>
+</html>

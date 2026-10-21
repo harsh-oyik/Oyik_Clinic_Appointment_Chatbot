@@ -2,7 +2,19 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "headers": [
+    {
+      "source": "/payment-status",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/payment-status",
+      "destination": "/payment-status.html"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
